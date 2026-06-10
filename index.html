@@ -359,12 +359,16 @@ main{max-width:1180px;margin:0 auto;padding:24px 24px 100px}
     <div class="section-title">Ledertavle</div>
     <div class="section-meta">Totalpoeng — kåres etter VM-finalen</div>
   </div>
-  <div class="lb-filter">
+  <div class="lb-filter" style="margin-bottom:8px">
     <button class="lb-fb active" onclick="switchLb('total',this)">Totalt</button>
     <button class="lb-fb" onclick="switchLb('kampresultater',this)">Kampresultater</button>
     <button class="lb-fb" onclick="switchLb('vm-vinner',this)">VM &amp; Toppcorer</button>
     <button class="lb-fb" onclick="switchLb('norge',this)">Norges kamper</button>
     <button class="lb-fb" onclick="switchLb('norges-vei',this)">Norges vei</button>
+  </div>
+  <div class="lb-filter">
+    <button class="lb-fb active" id="lbv-individuell" onclick="showLbView('individuell')">👤 Individuell</button>
+    <button class="lb-fb" id="lbv-avdeling" onclick="showLbView('avdeling')">🏢 Per avdeling</button>
   </div>
   <div class="leaderboard" id="leaderboard-container"></div>
   <p style="font-size:11px;color:var(--grey-mid);margin-top:14px;text-align:center" id="lb-disclaimer">📊 Viser eksempeldata frem til admin registrerer ekte kampresultater.</p>
@@ -521,6 +525,18 @@ main{max-width:1180px;margin:0 auto;padding:24px 24px 100px}
 </div>
 
 <script>
+// =============================================
+// VERSION RESET — bump number to force re-register
+// =============================================
+const APP_VERSION = '2';
+if (localStorage.getItem('hra-app-version') !== APP_VERSION) {
+  ['hra-vm-predictions','hra-vm-norway','hra-vm-big','hra-vm-norway-path',
+   'hra-players','hra-user','hra-results','hra-kr','hra-no','hra-big','hra-nv',
+   'hra-notif-dismissed','hra-notif-last'].forEach(k => localStorage.removeItem(k));
+  localStorage.setItem('hra-app-version', APP_VERSION);
+}
+
+
 // ═══════════════════════════════════════════════════
 // DATA — ROUNDS
 // ═══════════════════════════════════════════════════
@@ -1111,6 +1127,14 @@ function saveAll() {
 // ═══════════════════════════════════════════════════
 // LEADERBOARD
 // ═══════════════════════════════════════════════════
+function showLbView(view) {
+  curLbView = view;
+  document.querySelectorAll('[id^="lbv-"]').forEach(b => b.classList.remove('active'));
+  const el = document.getElementById('lbv-' + view);
+  if (el) el.classList.add('active');
+  renderLb();
+}
+
 function switchLb(tab, btn) {
   curLb=tab;
   document.querySelectorAll('.lb-fb').forEach(b=>b.classList.remove('active'));
@@ -1119,40 +1143,65 @@ function switchLb(tab, btn) {
 }
 
 function renderLb() {
-  // Check if we have any real results
-  const hasRealResults = Object.values(results).some(r=>r.home!==''&&r.home!==undefined);
-  const lbData = hasRealResults ? [] : [...MOCK_LB];
-
-  if(hasRealResults && players.length > 0) {
-    // Use real players + real points
+  const hasReal = Object.values(results).some(r => r.home !== '' && r.home !== undefined);
+  let data = [];
+  if (hasReal && players.length > 0) {
     players.forEach(p => {
-      const real = getRealPoints(p.name);
-      lbData.push({ name: p.name, dept: p.dept, kr: real.kr, vm: 0, no: real.no, nv: 0 });
+      const pts = getRealPts(p.name);
+      data.push({name:p.name, dept:p.dept, kr:pts.kr, vm:0, no:pts.no, nv:0});
     });
+  } else {
+    data = [...MOCK_LB];
   }
+  data = data.map(p => {
+    const total = p.kr + p.vm + p.no + p.nv;
+    const score = curLb==='total'?total:curLb==='kr'?p.kr:curLb==='vm'?p.vm:curLb==='no'?p.no:p.nv;
+    return {...p, total, score};
+  }).sort((a,b) => b.score - a.score);
 
-  const sorted = lbData.map(p=>{
-    const total = p.kr+p.vm+p.no+p.nv;
-    const score = curLb==='total'?total:curLb==='kampresultater'?p.kr:curLb==='vm-vinner'?p.vm:curLb==='norge'?p.no:p.nv;
-    return {...p,total,score};
-  }).sort((a,b)=>b.score-a.score);
+  const c = document.getElementById('lb-container');
 
-  const c = document.getElementById('leaderboard-container');
-  c.innerHTML = sorted.map((p,i)=>{
-    const rc = i===0?'top-1':i===1?'top-2':i===2?'top-3':'';
-    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
-    return `<div class="lb-row ${rc}">
-      <div class="lb-rank">${medal||(i+1)}</div>
-      <div><div class="lb-name">${p.name}</div><div class="lb-detail">${p.dept}</div></div>
-      <div><div class="lb-points">${p.score}</div><div class="lb-pts-label">poeng</div></div>
-      <div><div class="lb-points" style="font-size:17px;color:var(--grey-mid)">${p.total}</div><div class="lb-pts-label">totalt</div></div>
-    </div>`;
-  }).join('');
+  if (curLbView === 'avdeling') {
+    const depts = {};
+    data.forEach(p => { if (!depts[p.dept]) depts[p.dept]=[]; depts[p.dept].push(p); });
+    let h = '';
+    Object.keys(depts).sort().forEach(dept => {
+      const members = depts[dept];
+      const best = Math.max(...members.map(m => m.score));
+      h += '<div style="background:rgba(0,168,232,.08);border:1px solid rgba(0,168,232,.2);border-radius:10px;padding:12px 16px;margin-bottom:10px">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+      h += '<div style="font-size:14px;font-weight:700;color:var(--blue)">' + dept + '</div>';
+      h += '<div style="font-size:11px;color:var(--grey)">' + members.length + ' deltaker' + (members.length===1?'':'e') + ' &nbsp;·&nbsp; Beste: ' + best + 'p</div>';
+      h += '</div>';
+      members.forEach((p, i) => {
+        const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'.';
+        h += '<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid rgba(255,255,255,.05)">';
+        h += '<div style="min-width:24px;font-size:14px;text-align:center">' + medal + '</div>';
+        h += '<div style="flex:1;font-size:13px;font-weight:500">' + p.name + '</div>';
+        h += '<div style="font-family:Impact,Arial Narrow,Arial,sans-serif;font-size:20px;color:var(--white);min-width:40px;text-align:right">' + p.score + '</div>';
+        h += '<div style="font-size:9px;color:var(--grey);margin-left:2px">p</div>';
+        h += '</div>';
+      });
+      h += '</div>';
+    });
+    c.innerHTML = h || '<div class="empty-state"><p>Ingen deltakere ennå</p></div>';
+  } else {
+    let h = '';
+    data.forEach((p, i) => {
+      const rc = i===0?'r1':i===1?'r2':i===2?'r3':'';
+      const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1;
+      h += '<div class="lb-row ' + rc + '">';
+      h += '<div class="lb-rank">' + medal + '</div>';
+      h += '<div><div class="lb-name">' + p.name + '</div><div class="lb-dept">' + p.dept + '</div></div>';
+      h += '<div><div class="lb-pts">' + p.score + '</div><div class="lb-pts-label">poeng</div></div>';
+      h += '<div><div class="lb-pts" style="font-size:16px;color:var(--grey)">' + p.total + '</div><div class="lb-pts-label">totalt</div></div>';
+      h += '</div>';
+    });
+    c.innerHTML = h || '<div class="empty-state"><p>Ingen deltakere ennå</p></div>';
+  }
 }
 
-// ═══════════════════════════════════════════════════
-// PLAYERS
-// ═══════════════════════════════════════════════════
+
 function registerPlayer() {
   const name=document.getElementById('player-name').value.trim();
   const dept=document.getElementById('player-dept').value;
