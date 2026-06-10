@@ -638,6 +638,84 @@ function flagImg(emoji) {
 }
 
 // ═══════════════════════════════════════════════════
+// =============================================
+// SUPABASE
+// =============================================
+const SB_URL = 'https://xdznnfzaojpsgdtgzlhq.supabase.co';
+const SB_KEY = 'sb_publishable_wPxynajKI43hXxB4NGoasA_CUByYgJI';
+
+async function sbReq(path, opts) {
+  const res = await fetch(SB_URL + '/rest/v1/' + path, {
+    headers: {
+      'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY,
+      'Content-Type': 'application/json', 'Prefer': 'return=representation'
+    }, ...opts
+  });
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+async function sbLoadAll() {
+  try {
+    const rows = await sbReq('deltakere?select=*&order=opprettet.asc');
+    if (rows) {
+      players = rows.map(r => ({id:r.id, name:r.navn, dept:r.avdeling}));
+      localStorage.setItem('hra-players', JSON.stringify(players));
+    }
+    const res = await sbReq('resultater?select=*');
+    if (res) {
+      results = {};
+      res.forEach(r => { results[r.kamp_id] = {home:r.hjemme_mal, away:r.borte_mal}; });
+      localStorage.setItem('hra-results', JSON.stringify(results));
+    }
+    if (currentUser) {
+      const me = await sbReq('deltakere?navn=eq.' + encodeURIComponent(currentUser.name));
+      if (me && me.length > 0) {
+        const r = me[0];
+        if (r.tips_kr && Object.keys(r.tips_kr).length) { predictions = r.tips_kr; localStorage.setItem('hra-vm-predictions', JSON.stringify(predictions)); }
+        if (r.tips_no && Object.keys(r.tips_no).length) { norwayPreds = r.tips_no; localStorage.setItem('hra-vm-norway', JSON.stringify(norwayPreds)); }
+        if (r.tips_big && Object.keys(r.tips_big).length) { bigAnswers = r.tips_big; localStorage.setItem('hra-vm-big', JSON.stringify(bigAnswers)); }
+        if (r.tips_nv && Object.keys(r.tips_nv).length) { norwayPath = r.tips_nv; localStorage.setItem('hra-vm-norway-path', JSON.stringify(norwayPath)); }
+      }
+    }
+    renderPlayers(); renderLeaderboard(); updateBadges(); updateOverview();
+  } catch(e) { console.warn('Supabase load failed:', e.message); }
+}
+
+async function sbSaveTips() {
+  if (!currentUser) return;
+  try {
+    const existing = await sbReq('deltakere?navn=eq.' + encodeURIComponent(currentUser.name) + '&select=id');
+    const payload = {
+      navn: currentUser.name, avdeling: currentUser.dept,
+      tips_kr: predictions, tips_no: norwayPreds,
+      tips_big: bigAnswers, tips_nv: norwayPath,
+      oppdatert: new Date().toISOString()
+    };
+    if (existing && existing.length > 0) {
+      await sbReq('deltakere?navn=eq.' + encodeURIComponent(currentUser.name), {method:'PATCH', body:JSON.stringify(payload)});
+    } else {
+      await sbReq('deltakere', {method:'POST', body:JSON.stringify(payload)});
+    }
+  } catch(e) { console.warn('Supabase save failed:', e.message); }
+}
+
+async function sbRegister(name, dept) {
+  try {
+    const ex = await sbReq('deltakere?navn=eq.' + encodeURIComponent(name) + '&select=id');
+    if (!ex || ex.length === 0) {
+      await sbReq('deltakere', {method:'POST', body:JSON.stringify({navn:name, avdeling:dept})});
+    }
+  } catch(e) { console.warn('sbRegister failed:', e.message); }
+}
+
+async function sbSaveResult(kampId, hjemme, borte) {
+  try {
+    await sbReq('resultater?kamp_id=eq.' + kampId, {method:'DELETE'});
+    await sbReq('resultater', {method:'POST', body:JSON.stringify({kamp_id:kampId, hjemme_mal:hjemme, borte_mal:borte})});
+  } catch(e) { console.warn('sbSaveResult failed:', e.message); }
+}
+
 // STATE
 // ═══════════════════════════════════════════════════
 let krPreds    = JSON.parse(localStorage.getItem('hra-kr')   || '{}');
@@ -1026,6 +1104,8 @@ function saveAll() {
   dirty=false;
   document.getElementById('save-bar').classList.remove('visible');
   showToast('🎯 Alle tips lagret!');
+
+  sbSaveTips();
 }
 
 // ═══════════════════════════════════════════════════
@@ -1495,6 +1575,7 @@ else {
   document.querySelector('main').style.display='none';
 }
 initNotifBanner();
+sbLoadAll();
 </script>
 </body>
 </html>
