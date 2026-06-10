@@ -1390,7 +1390,7 @@ function dismissNotifBanner() {
   localStorage.setItem('hra-notif-dismissed', '1');
 }
 
-async function requestNotifPermission() {
+async async function requestNotifPermission() {
   if (!('Notification' in window)) {
     showToast('⚠️ Nettleseren din støtter ikke varsler');
     return;
