@@ -647,6 +647,25 @@ const FLAG_CODES = {
   '🇷🇸':'rs','🇰🇷':'kr','🇦🇺':'au','🇪🇨':'ec','🇬🇭':'gh',
   '🇵🇦':'pa','🇸🇦':'sa','🇬🇧':'gb',
 };
+function getRealPts(playerName) {
+  var krPts = 0;
+  ROUNDS.forEach(function(r) {
+    if (r.locked) return;
+    r.matches.filter(function(m) { return !m.tbd; }).forEach(function(m) {
+      var pred = krPreds[m.id] || {};
+      var real = results[m.id] || {};
+      krPts += calcPts(pred.home, pred.away, real.home, real.away, r.exactPts, r.winnerPts);
+    });
+  });
+  var noPts = 0;
+  NORWAY_MATCHES.forEach(function(m) {
+    var pred = noPreds[m.id] || {};
+    var real = results[m.id] || {};
+    noPts += calcPts(pred.home, pred.away, real.home, real.away, 4, 1);
+  });
+  return {kr: krPts, vm: 0, no: noPts, nv: 0};
+}
+
 function flagImg(emoji) {
   const code = FLAG_CODES[emoji];
   if(!code) return emoji;
@@ -1165,7 +1184,7 @@ function renderLb() {
     return {...p, total, score};
   }).sort((a,b) => b.score - a.score);
 
-  const c = document.getElementById('lb-container');
+  const c = document.getElementById('leaderboard-container');
 
   if (curLbView === 'avdeling') {
     const depts = {};
