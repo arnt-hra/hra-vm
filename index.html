@@ -1247,6 +1247,7 @@ function gateRegister() {
     localStorage.setItem('hra-players',JSON.stringify(players));
   }
 
+  sbRegister(name, dept);
   closeGate();
   showToast('⚽ Velkommen, '+name+'!');
   renderPlayers();
