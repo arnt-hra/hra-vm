@@ -654,14 +654,14 @@ function getRealPts(playerName) {
     r.matches.filter(function(m) { return !m.tbd; }).forEach(function(m) {
       var pred = krPreds[m.id] || {};
       var real = results[m.id] || {};
-      krPts += calcPts(pred.home, pred.away, real.home, real.away, r.exactPts, r.winnerPts);
+      krPts += calcPoints(pred.home, pred.away, real.home, real.away, r.exactPts, r.winnerPts);
     });
   });
   var noPts = 0;
   NORWAY_MATCHES.forEach(function(m) {
     var pred = noPreds[m.id] || {};
     var real = results[m.id] || {};
-    noPts += calcPts(pred.home, pred.away, real.home, real.away, 4, 1);
+    noPts += calcPoints(pred.home, pred.away, real.home, real.away, 4, 1);
   });
   return {kr: krPts, vm: 0, no: noPts, nv: 0};
 }
