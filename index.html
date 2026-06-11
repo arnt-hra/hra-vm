@@ -528,7 +528,7 @@ main{max-width:1180px;margin:0 auto;padding:24px 24px 100px}
 // =============================================
 // VERSION RESET — bump number to force re-register
 // =============================================
-const APP_VERSION = '2';
+const APP_VERSION = '3';
 if (localStorage.getItem('hra-app-version') !== APP_VERSION) {
   ['hra-vm-predictions','hra-vm-norway','hra-vm-big','hra-vm-norway-path',
    'hra-players','hra-user','hra-results','hra-kr','hra-no','hra-big','hra-nv',
@@ -658,7 +658,7 @@ function flagImg(emoji) {
 // SUPABASE
 // =============================================
 const SB_URL = 'https://xdznnfzaojpsgdtgzlhq.supabase.co';
-const SB_KEY = 'sb_publishable_wPxynajKI43hXxB4NGoasA_CUByYgJI';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkem5uZnphb2pwc2dkdGd6bGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNzk3NDIsImV4cCI6MjA5NjY1NTc0Mn0.uqy8Ux5uqQsOZXmDEILHN22PcmvVJ3r0OFVcVzXR2H8';
 
 async function sbReq(path, opts) {
   const res = await fetch(SB_URL + '/rest/v1/' + path, {
