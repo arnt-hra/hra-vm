@@ -694,7 +694,12 @@ async function sbLoadAll() {
         if (r.tips_nv && Object.keys(r.tips_nv).length) { norwayPath = r.tips_nv; localStorage.setItem('hra-vm-norway-path', JSON.stringify(norwayPath)); }
       }
     }
-    renderPlayers(); renderLeaderboard(); updateBadges(); updateOverview();
+    setTimeout(function() {
+      if (typeof renderPlayers === 'function') renderPlayers();
+      if (typeof renderLb === 'function') renderLb();
+      if (typeof updateBadges === 'function') updateBadges();
+      if (typeof updateOverview === 'function') updateOverview();
+    }, 0);
   } catch(e) { console.warn('Supabase load failed:', e.message); }
 }
 
