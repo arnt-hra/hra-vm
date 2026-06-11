@@ -1085,9 +1085,9 @@ function jumpToContest(name) {
 function updateOverview() {
   var allKr = allKrMatches();
   var cards = [
-    {icon:'⚽', title:'Kampresultater', desc:'Tipp alle kamper fra gruppespill til finale.', done:countDone(allKr,krPreds), total:allKr.length, contest:'kampresultater'},
+    {icon:'⚽', title:'Kampresultater', desc:'Tipp alle kamper fra gruppespill til finale.', done:countDoneInList(allKr,krPreds), total:allKr.length, contest:'kampresultater'},
     {icon:'🏆', title:'VM & Toppcorer', desc:'Hvem vinner VM? Hvem scorer flest mål?', done:Object.keys(bigAnswers).length, total:BIG_Q.length, contest:'vm-vinner'},
-    {icon:'🇳🇴', title:'Norges kamper', desc:'Tipp Norges tre gruppespillkamper.', done:countDone(NORWAY_MATCHES,noPreds), total:NORWAY_MATCHES.length, contest:'norge'},
+    {icon:'🇳🇴', title:'Norges kamper', desc:'Tipp Norges tre gruppespillkamper.', done:countDoneInList(NORWAY_MATCHES,noPreds), total:NORWAY_MATCHES.length, contest:'norge'},
     {icon:'📍', title:'Norges vei', desc:'Spå hvor langt Norge tar det.', done:noPath.stage?1:0, total:1, contest:'norges-vei'},
   ];
   var el = document.getElementById('co-overview');
