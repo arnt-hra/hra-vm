@@ -979,32 +979,78 @@ const BIG_Q = [
 ];
 
 function renderBigQ() {
-  const c = document.getElementById('big-questions-container');
-  let html = '';
-  BIG_Q.forEach(q => {
-    const ans = bigAnswers[q.id];
-    html += `<div class="question-card ${ans?'answered':''}" id="bq-${q.id}">
-      <div class="q-label">${q.label} · ${q.pts} poeng</div>
-      <div class="q-title">${q.q}</div>`;
-    if(q.type==='teams') {
-      html += '<div class="q-options">';
-      WORLD_TEAMS.forEach(t => {
-        html += `<button class="q-option ${ans===t.name?'selected':''}" onclick="selectBigTeam('${q.id}','${t.name}')">
-          ${flagImg(t.flag)}${t.name}</button>`;
+  var container = document.getElementById('big-questions-container');
+  if (!container) return;
+  container.innerHTML = '';
+  BIG_Q.forEach(function(q) {
+    var ans = bigAnswers[q.id];
+    var card = document.createElement('div');
+    card.className = 'question-card' + (ans ? ' answered' : '');
+
+    var labelDiv = document.createElement('div');
+    labelDiv.className = 'q-label';
+    labelDiv.textContent = q.label + ' · ' + q.pts + ' poeng';
+    card.appendChild(labelDiv);
+
+    var titleDiv = document.createElement('div');
+    titleDiv.className = 'q-title';
+    titleDiv.textContent = q.q;
+    card.appendChild(titleDiv);
+
+    if (q.type === 'teams') {
+      var opts = document.createElement('div');
+      opts.className = 'q-options';
+      WORLD_TEAMS.forEach(function(t) {
+        var btn = document.createElement('button');
+        btn.className = 'q-option' + (ans === t.name ? ' selected' : '');
+        var img = document.createElement('img');
+        img.src = 'https://flagcdn.com/20x15/' + t.cc + '.png';
+        img.width = 20; img.height = 15;
+        img.style.borderRadius = '2px';
+        img.style.marginRight = '4px';
+        btn.appendChild(img);
+        btn.appendChild(document.createTextNode(t.name));
+        btn.onclick = (function(qId, teamName) {
+          return function() { selectBigTeam(qId, teamName); };
+        })(q.id, t.name);
+        opts.appendChild(btn);
       });
-      html += '</div>';
-      if(ans) html += `<div class="q-answered-val">✓ Du har valgt: ${ans}</div>`;
+      card.appendChild(opts);
+      if (ans) {
+        var ansDiv = document.createElement('div');
+        ansDiv.className = 'q-answered-val';
+        ansDiv.textContent = '✓ Du har valgt: ' + ans;
+        card.appendChild(ansDiv);
+      }
     } else {
-      html += `<div class="q-text-wrap">
-        <input class="q-text-input" id="qi-${q.id}" type="text" placeholder="${q.placeholder||''}" value="${ans||''}">
-        <button class="q-save-btn" onclick="saveBigText('${q.id}')">Lagre</button>
-      </div>`;
-      if(ans) html += `<div class="q-answered-val">✓ Svart: ${ans}</div>`;
+      var wrap = document.createElement('div');
+      wrap.className = 'q-text-wrap';
+      var inp = document.createElement('input');
+      inp.className = 'q-text-input';
+      inp.id = 'qi-' + q.id;
+      inp.type = 'text';
+      inp.placeholder = q.placeholder || '';
+      inp.value = ans || '';
+      wrap.appendChild(inp);
+      var saveBtn = document.createElement('button');
+      saveBtn.className = 'q-save-btn';
+      saveBtn.textContent = 'Lagre';
+      saveBtn.onclick = (function(qId) {
+        return function() { saveBigText(qId); };
+      })(q.id);
+      wrap.appendChild(saveBtn);
+      card.appendChild(wrap);
+      if (ans) {
+        var ansDiv2 = document.createElement('div');
+        ansDiv2.className = 'q-answered-val';
+        ansDiv2.textContent = '✓ Svart: ' + ans;
+        card.appendChild(ansDiv2);
+      }
     }
-    html += '</div>';
+    container.appendChild(card);
   });
-  c.innerHTML = html;
 }
+
 
 function selectBigTeam(qId, name) {
   bigAnswers[qId]=name;
@@ -1026,23 +1072,47 @@ function saveBigText(qId) {
 // NORWAY PATH
 // ═══════════════════════════════════════════════════
 function renderNorwayPath() {
-  const c = document.getElementById('norway-path-container');
-  const sel = noPath.stage;
-  let html = `<div class="question-card ${sel?'answered':''}">
-    <div class="q-label">Norges vei · 5 poeng</div>
-    <div class="q-title">Hvor langt kommer Norge i VM 2026?</div>
-    <div class="q-options">`;
-  NORWAY_STAGES.forEach(s => {
-    html += `<button class="q-option ${sel===s.id?'selected':''}" onclick="selectNorwayStage('${s.id}')">${s.label}</button>`;
+  var sel = noPath.stage;
+  var container = document.getElementById('norway-path-container');
+  if (!container) return;
+  container.innerHTML = '';
+
+  var card = document.createElement('div');
+  card.className = 'question-card' + (sel ? ' answered' : '');
+
+  var labelDiv = document.createElement('div');
+  labelDiv.className = 'q-label';
+  labelDiv.textContent = 'Norges vei · 5 poeng';
+  card.appendChild(labelDiv);
+
+  var titleDiv = document.createElement('div');
+  titleDiv.className = 'q-title';
+  titleDiv.textContent = 'Hvor langt kommer Norge i VM 2026?';
+  card.appendChild(titleDiv);
+
+  var opts = document.createElement('div');
+  opts.className = 'q-options';
+  NORWAY_STAGES.forEach(function(s) {
+    var btn = document.createElement('button');
+    btn.className = 'q-option' + (sel === s.id ? ' selected' : '');
+    btn.textContent = s.label;
+    btn.onclick = (function(stageId) {
+      return function() { selectNorwayStage(stageId); };
+    })(s.id);
+    opts.appendChild(btn);
   });
-  html += '</div>';
-  if(sel) {
-    const label = NORWAY_STAGES.find(s=>s.id===sel)?.label||sel;
-    html += `<div class="q-answered-val">✓ Du har valgt: ${label}</div>`;
+  card.appendChild(opts);
+
+  if (sel) {
+    var found = NORWAY_STAGES.find(function(s) { return s.id === sel; });
+    var ansDiv = document.createElement('div');
+    ansDiv.className = 'q-answered-val';
+    ansDiv.textContent = '✓ Du har valgt: ' + (found ? found.label : sel);
+    card.appendChild(ansDiv);
   }
-  html += '</div>';
-  c.innerHTML = html;
+  container.appendChild(card);
 }
+
 
 function selectNorwayStage(id) {
   noPath={stage:id};
