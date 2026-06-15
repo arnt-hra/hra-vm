@@ -1003,12 +1003,9 @@ function renderBigQ() {
       WORLD_TEAMS.forEach(function(t) {
         var btn = document.createElement('button');
         btn.className = 'q-option' + (ans === t.name ? ' selected' : '');
-        var img = document.createElement('img');
-        img.src = 'https://flagcdn.com/20x15/' + t.cc + '.png';
-        img.width = 20; img.height = 15;
-        img.style.borderRadius = '2px';
-        img.style.marginRight = '4px';
-        btn.appendChild(img);
+        var flagSpan = document.createElement('span');
+        flagSpan.innerHTML = flagImg(t.flag) + ' ';
+        btn.appendChild(flagSpan);
         btn.appendChild(document.createTextNode(t.name));
         btn.onclick = (function(qId, teamName) {
           return function() { selectBigTeam(qId, teamName); };
