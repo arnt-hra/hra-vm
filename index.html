@@ -670,12 +670,22 @@ const SB_URL = 'https://xdznnfzaojpsgdtgzlhq.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkem5uZnphb2pwc2dkdGd6bGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNzk3NDIsImV4cCI6MjA5NjY1NTc0Mn0.uqy8Ux5uqQsOZXmDEILHN22PcmvVJ3r0OFVcVzXR2H8';
 
 async function sbReq(path, opts) {
+  const extra_headers = (opts && opts.headers_extra) ? opts.headers_extra : {};
+  if (opts && opts.headers_extra) delete opts.headers_extra;
   const res = await fetch(SB_URL + '/rest/v1/' + path, {
     headers: {
-      'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY,
-      'Content-Type': 'application/json', 'Prefer': 'return=representation'
-    }, ...opts
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + SB_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+      ...extra_headers
+    },
+    ...opts
   });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(res.status + ': ' + err);
+  }
   const text = await res.text();
   return text ? JSON.parse(text) : null;
 }
@@ -732,11 +742,40 @@ async function sbSaveTips() {
 
 async function sbRegister(name, dept) {
   try {
-    const ex = await sbReq('deltakere?navn=eq.' + encodeURIComponent(name) + '&select=id');
+    await sbReq('deltakere', {
+      method: 'POST',
+      headers_extra: {'Prefer': 'resolution=ignore-duplicates'},
+      body: JSON.stringify({navn: name, avdeling: dept})
+    });
+    console.log('Registered in Supabase:', name);
+  } catch(e) {
+    console.warn('sbRegister failed:', e.message);
+    // Retry once after 3 seconds
+    setTimeout(async function() {
+      try {
+        await sbReq('deltakere', {
+          method: 'POST',
+          body: JSON.stringify({navn: name, avdeling: dept})
+        });
+        console.log('sbRegister retry succeeded');
+      } catch(e2) { console.warn('sbRegister retry failed:', e2.message); }
+    }, 3000);
+  }
+}
+
+// Sync local user to Supabase - called when app loads if user exists
+async function sbSyncCurrentUser() {
+  if (!currentUser) return;
+  try {
+    const ex = await sbReq('deltakere?navn=eq.' + encodeURIComponent(currentUser.name) + '&select=id');
     if (!ex || ex.length === 0) {
-      await sbReq('deltakere', {method:'POST', body:JSON.stringify({navn:name, avdeling:dept})});
+      await sbReq('deltakere', {
+        method: 'POST',
+        body: JSON.stringify({navn: currentUser.name, avdeling: currentUser.dept})
+      });
+      console.log('Synced missing user to Supabase:', currentUser.name);
     }
-  } catch(e) { console.warn('sbRegister failed:', e.message); }
+  } catch(e) { console.warn('sbSyncCurrentUser failed:', e.message); }
 }
 
 async function sbSaveResult(kampId, hjemme, borte) {
@@ -1698,7 +1737,11 @@ renderNorwayPath();
 renderPlayers();
 updateBadges();
 updateOverview();
-if(currentUser) { closeGate(); updateNotifStatus(); }
+if(currentUser) {
+  closeGate();
+  updateNotifStatus();
+  sbSyncCurrentUser(); // Sync to Supabase if not already there
+}
 else {
   document.getElementById('reg-gate').classList.remove('hidden');
   document.querySelector('header').style.display='none';
