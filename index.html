@@ -763,17 +763,54 @@ async function sbRegister(name, dept) {
   }
 }
 
-// Sync local user to Supabase - called when app loads if user exists
+// Sync local user and tips to Supabase on load
 async function sbSyncCurrentUser() {
   if (!currentUser) return;
   try {
-    const ex = await sbReq('deltakere?navn=eq.' + encodeURIComponent(currentUser.name) + '&select=id');
+    const ex = await sbReq('deltakere?navn=eq.' + encodeURIComponent(currentUser.name) + '&select=id,tips_kr,tips_no,tips_big,tips_nv');
+    
+    // Check if local data has tips that Supabase is missing
+    const hasLocalKr  = Object.keys(krPreds).length > 0;
+    const hasLocalNo  = Object.keys(noPreds).length > 0;
+    const hasLocalBig = Object.keys(bigAnswers).length > 0;
+    const hasLocalNv  = Object.keys(noPath).length > 0;
+    const hasLocalTips = hasLocalKr || hasLocalNo || hasLocalBig || hasLocalNv;
+
     if (!ex || ex.length === 0) {
+      // User not in Supabase at all — insert with all local data
       await sbReq('deltakere', {
         method: 'POST',
-        body: JSON.stringify({navn: currentUser.name, avdeling: currentUser.dept})
+        body: JSON.stringify({
+          navn: currentUser.name,
+          avdeling: currentUser.dept,
+          tips_kr: krPreds,
+          tips_no: noPreds,
+          tips_big: bigAnswers,
+          tips_nv: noPath
+        })
       });
-      console.log('Synced missing user to Supabase:', currentUser.name);
+      console.log('Synced new user + tips to Supabase:', currentUser.name);
+    } else if (hasLocalTips) {
+      // User exists — check if Supabase tips are empty but local has data
+      const sbRow = ex[0];
+      const sbHasTips = (sbRow.tips_kr && Object.keys(sbRow.tips_kr).length > 0) ||
+                        (sbRow.tips_no && Object.keys(sbRow.tips_no).length > 0) ||
+                        (sbRow.tips_big && Object.keys(sbRow.tips_big).length > 0) ||
+                        (sbRow.tips_nv && Object.keys(sbRow.tips_nv).length > 0);
+      if (!sbHasTips) {
+        // Supabase is empty but local has tips — sync automatically
+        await sbReq('deltakere?navn=eq.' + encodeURIComponent(currentUser.name), {
+          method: 'PATCH',
+          body: JSON.stringify({
+            tips_kr: krPreds,
+            tips_no: noPreds,
+            tips_big: bigAnswers,
+            tips_nv: noPath,
+            oppdatert: new Date().toISOString()
+          })
+        });
+        console.log('Auto-synced local tips to Supabase for:', currentUser.name);
+      }
     }
   } catch(e) { console.warn('sbSyncCurrentUser failed:', e.message); }
 }
