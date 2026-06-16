@@ -707,10 +707,10 @@ async function sbLoadAll() {
       const me = await sbReq('deltakere?navn=eq.' + encodeURIComponent(currentUser.name));
       if (me && me.length > 0) {
         const r = me[0];
-        if (r.tips_kr && Object.keys(r.tips_kr).length) { predictions = r.tips_kr; localStorage.setItem('hra-vm-predictions', JSON.stringify(predictions)); }
-        if (r.tips_no && Object.keys(r.tips_no).length) { norwayPreds = r.tips_no; localStorage.setItem('hra-vm-norway', JSON.stringify(norwayPreds)); }
-        if (r.tips_big && Object.keys(r.tips_big).length) { bigAnswers = r.tips_big; localStorage.setItem('hra-vm-big', JSON.stringify(bigAnswers)); }
-        if (r.tips_nv && Object.keys(r.tips_nv).length) { norwayPath = r.tips_nv; localStorage.setItem('hra-vm-norway-path', JSON.stringify(norwayPath)); }
+        if (r.tips_kr && Object.keys(r.tips_kr).length) { krPreds = r.tips_kr; localStorage.setItem('hra-kr', JSON.stringify(krPreds)); }
+        if (r.tips_no && Object.keys(r.tips_no).length) { noPreds = r.tips_no; localStorage.setItem('hra-no', JSON.stringify(noPreds)); }
+        if (r.tips_big && Object.keys(r.tips_big).length) { bigAnswers = r.tips_big; localStorage.setItem('hra-big', JSON.stringify(bigAnswers)); }
+        if (r.tips_nv && Object.keys(r.tips_nv).length) { noPath = r.tips_nv; localStorage.setItem('hra-nv', JSON.stringify(noPath)); }
       }
     }
     setTimeout(function() {
@@ -728,8 +728,8 @@ async function sbSaveTips() {
     const existing = await sbReq('deltakere?navn=eq.' + encodeURIComponent(currentUser.name) + '&select=id');
     const payload = {
       navn: currentUser.name, avdeling: currentUser.dept,
-      tips_kr: predictions, tips_no: norwayPreds,
-      tips_big: bigAnswers, tips_nv: norwayPath,
+      tips_kr: krPreds, tips_no: noPreds,
+      tips_big: bigAnswers, tips_nv: noPath,
       oppdatert: new Date().toISOString()
     };
     if (existing && existing.length > 0) {
