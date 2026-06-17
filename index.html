@@ -821,6 +821,20 @@ async function sbSaveResult(kampId, hjemme, borte) {
 
 // STATE
 // ═══════════════════════════════════════════════════
+const MATCH_DATES = {
+  'g1': '2026-06-16T18:00:00+02:00',
+  'g2': '2026-06-22T21:00:00+02:00',
+  'g3': '2026-06-26T21:00:00+02:00',
+  'g4': '2026-06-14T21:00:00+02:00',
+  'g5': '2026-06-20T21:00:00+02:00',
+  'g6': '2026-06-25T21:00:00+02:00',
+};
+function isMatchLocked(matchId) {
+  var d = MATCH_DATES[matchId];
+  if (!d) return false;
+  return Date.now() > (new Date(d).getTime() - 30 * 60 * 1000);
+}
+
 let krPreds    = JSON.parse(localStorage.getItem('hra-kr')   || '{}');
 let bigAnswers = JSON.parse(localStorage.getItem('hra-big')  || '{}');
 let noPreds    = JSON.parse(localStorage.getItem('hra-no')   || '{}');
