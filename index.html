@@ -714,9 +714,10 @@ async function sbLoadAll() {
     }
     setTimeout(function() {
       if (typeof renderPlayers === 'function') renderPlayers();
-      if (typeof renderLb === 'function') renderLb();
       if (typeof updateBadges === 'function') updateBadges();
       if (typeof updateOverview === 'function') updateOverview();
+      // Load all tips for leaderboard
+      if (typeof loadAllTipsAndRefreshLb === 'function') loadAllTipsAndRefreshLb();
     }, 0);
   } catch(e) { console.warn('Supabase load failed:', e.message); }
 }
@@ -831,6 +832,7 @@ let dirty      = false;
 let curRound   = 'gruppe';
 let curLb      = 'total';
 let curLbView  = 'individuell';
+let allParticipantData = null;
 
 // ═══════════════════════════════════════════════════
 // TABS
@@ -1300,7 +1302,13 @@ function switchLb(tab, btn) {
 function renderLb() {
   const hasReal = Object.values(results).some(r => r.home !== '' && r.home !== undefined);
   let data = [];
-  if (hasReal && players.length > 0) {
+  if (allParticipantData && allParticipantData.length > 0) {
+    // Use server-calculated data (most accurate)
+    data = allParticipantData.map(p => ({
+      name: p.name, dept: p.dept,
+      kr: p.kr, vm: p.vm, no: 0, nv: p.nv
+    }));
+  } else if (hasReal && players.length > 0) {
     players.forEach(p => {
       const pts = getRealPts(p.name);
       data.push({name:p.name, dept:p.dept, kr:pts.kr, vm:0, no:pts.no, nv:0});
@@ -1623,11 +1631,77 @@ function updatePointsSummary() {
   summary.innerHTML = `<strong>${totalResults} kamper med registrert resultat.</strong> Lagre for å oppdatere poengstillingen for alle deltakere.`;
 }
 
-function saveAllResults() {
+async function saveAllResults() {
   localStorage.setItem('hra-results', JSON.stringify(results));
+  showToast('✅ Lagrer resultater...');
+
+  // Save each result to Supabase
+  const promises = Object.keys(results).map(async function(kampId) {
+    const r = results[kampId];
+    if (r && r.home !== '' && r.home !== undefined && r.away !== '' && r.away !== undefined) {
+      try {
+        // Delete existing then insert
+        await sbReq('resultater?kamp_id=eq.' + kampId, {method: 'DELETE'});
+        await sbReq('resultater', {
+          method: 'POST',
+          body: JSON.stringify({kamp_id: kampId, hjemme_mal: r.home, borte_mal: r.away})
+        });
+      } catch(e) { console.warn('Save result failed for', kampId, e.message); }
+    }
+  });
+
+  await Promise.all(promises);
+
+  // Load all participants tips from Supabase and calculate real points
+  await loadAllTipsAndRefreshLb();
   showToast('✅ Resultater lagret! Poeng oppdatert.');
   renderAdminPanel();
-  // Re-render leaderboard with real points if visible
+}
+
+// Load all participant tips from Supabase and recalculate leaderboard
+async function loadAllTipsAndRefreshLb() {
+  try {
+    const allRows = await sbReq('deltakere?select=navn,avdeling,tips_kr,tips_big,tips_nv&order=opprettet.asc');
+    if (!allRows) return;
+
+    // Build leaderboard data from all participants
+    allParticipantData = allRows.map(function(row) {
+      var krPts = 0;
+      var tipKr = row.tips_kr || {};
+      ROUNDS.forEach(function(r) {
+        if (r.locked) return;
+        r.matches.filter(function(m) { return !m.tbd; }).forEach(function(m) {
+          var pred = tipKr[m.id] || {};
+          var real = results[m.id] || {};
+          krPts += calcPoints(pred.home, pred.away, real.home, real.away, r.exactPts, r.winnerPts);
+        });
+      });
+
+      var tipBig = row.tips_big || {};
+      var vmPts = 0;
+      // VM-vinner: 10 pts if correct (stored in results as 'vm-winner')
+      // Toppcorer: 5 pts if correct (stored in results as 'topscorer')
+      // For now just show kr points - vm/nv points added when we have results
+
+      var tipNv = row.tips_nv || {};
+      var nvPts = 0;
+      // Norges vei - check if stage matches actual result
+      // results['norges-vei'] would hold the actual stage
+
+      return {
+        name: row.navn,
+        dept: row.avdeling,
+        kr: krPts,
+        vm: vmPts,
+        nv: nvPts,
+        total: krPts + vmPts + nvPts
+      };
+    });
+
+    renderLb();
+  } catch(e) {
+    console.warn('loadAllTipsAndRefreshLb failed:', e.message);
+  }
 }
 
 // ── REAL POINTS CALCULATION ──────────────────────────────────────────────────
