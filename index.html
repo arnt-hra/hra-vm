@@ -945,12 +945,12 @@ function buildMatchGrid(matches, store, roundId) {
         <div class="score-inputs">
           <input class="score-input" type="number" min="0" max="20"
             id="h-${m.id}" value="${hasH?pred.home:''}" placeholder="–"
-            ${isTbd?'disabled':''}
+            ${(isTbd||isMatchLocked(m.id))?'disabled title="Fristen er passert"':''}
             oninput="onKrInput('${m.id}','${roundId}')">
           <div class="score-sep">:</div>
           <input class="score-input" type="number" min="0" max="20"
             id="a-${m.id}" value="${hasA?pred.away:''}" placeholder="–"
-            ${isTbd?'disabled':''}
+            ${(isTbd||isMatchLocked(m.id))?'disabled title="Fristen er passert"':''}
             oninput="onKrInput('${m.id}','${roundId}')">
         </div>
         <div class="match-date">${isTbd?'Dato ikke satt':m.date}</div>
@@ -971,6 +971,7 @@ function buildMatchGrid(matches, store, roundId) {
 }
 
 function onKrInput(matchId, roundId) {
+  if (isMatchLocked(matchId)) { showToast('⛔ Fristen er passert'); return; }
   const hv = document.getElementById('h-'+matchId).value;
   const av = document.getElementById('a-'+matchId).value;
   krPreds[matchId] = {home: hv!==''?parseInt(hv):'', away: av!==''?parseInt(av):''};
