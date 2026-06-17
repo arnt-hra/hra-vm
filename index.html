@@ -1817,27 +1817,60 @@ function scheduleNotifications() {
 function checkAndNotifyToday() {
   if (Notification.permission !== 'granted') return;
   const today = new Date().toISOString().slice(0, 10);
-  const isMatchDay = MATCH_DAYS.includes(today);
-  if (!isMatchDay) return;
-
   const lastNotified = localStorage.getItem('hra-notif-last');
-  if (lastNotified === today) return; // already notified today
+  if (lastNotified === today) return;
 
-  // Count untipped available matches
-  const allKr = ROUNDS.flatMap(r => r.locked ? [] : r.matches.filter(m => !m.tbd));
-  const untipped = allKr.filter(m => {
-    const p = krPreds[m.id];
-    return !p || p.home === '' || p.home === undefined;
-  }).length;
+  const messages = [];
 
-  if (untipped > 0) {
+  // Check untipped matches on match days
+  if (MATCH_DAYS.includes(today)) {
+    const allKr = ROUNDS.flatMap(r => r.locked ? [] : r.matches.filter(m => !m.tbd));
+    const untipped = allKr.filter(m => {
+      const p = krPreds[m.id];
+      return !isMatchLocked(m.id) && (!p || p.home === '' || p.home === undefined);
+    }).length;
+    if (untipped > 0) messages.push(untipped + ' kamp' + (untipped > 1 ? 'er' : '') + ' ikke tippet');
+  }
+
+  // Always check VM & Toppcorer if not locked
+  if (!isBigQLocked()) {
+    if (!bigAnswers['vm-winner']) messages.push('VM-vinner ikke tippet');
+    if (!bigAnswers['topscorer']) messages.push('Toppcorer ikke tippet');
+  }
+
+  // Always check Norges vei
+  if (!noPath.stage) messages.push('Norges vei ikke tippet');
+
+  if (messages.length > 0) {
     localStorage.setItem('hra-notif-last', today);
-    new Notification('⚽ HRA VM-Tipp — kampdag i dag!', {
-      body: `Det er ${untipped} kamp${untipped > 1 ? 'er' : ''} du ikke har tippet ennå. Husk fristen er 30 min før avspark!`,
+    new Notification('⚽ HRA VM-Tippset — husk å tippe!', {
+      body: messages.join(' • ') + '. Frist VM/Toppcorer: 26. juni kl. 21:00!',
       icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⚽</text></svg>',
       tag: 'hra-vm-reminder',
     });
   }
+}
+
+// In-app reminder shown once per session
+function checkInAppReminder() {
+  if (!currentUser) return;
+  if (sessionStorage.getItem('hra-reminder-shown')) return;
+
+  const reminders = [];
+  if (!isBigQLocked()) {
+    if (!bigAnswers['vm-winner']) reminders.push('VM-vinner');
+    if (!bigAnswers['topscorer']) reminders.push('Toppcorer');
+  }
+  if (!noPath.stage) reminders.push('Norges vei');
+  if (reminders.length === 0) return;
+
+  sessionStorage.setItem('hra-reminder-shown', '1');
+  const el = document.getElementById('deadline-banner');
+  if (!el) return;
+  const div = document.createElement('div');
+  div.style.cssText = 'background:rgba(217,64,64,.12);border:1px solid rgba(217,64,64,.35);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--white);margin-top:8px';
+  div.innerHTML = '⚠️ Du har ikke tippet: <strong>' + reminders.join(', ') + '</strong>. Husk fristen er 26. juni kl. 21:00!';
+  el.appendChild(div);
 }
 
 // Also show notification status in user badge area
