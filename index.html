@@ -1139,7 +1139,13 @@ function renderBigQ() {
 }
 
 
+const BIG_Q_DEADLINE = '2026-06-26T19:00:00Z'; // 30 min for Norge-Frankrike
+function isBigQLocked() {
+  return Date.now() > (new Date(BIG_Q_DEADLINE).getTime() - 30 * 60 * 1000);
+}
+
 function selectBigTeam(qId, name) {
+  if (isBigQLocked()) { showToast('⛔ VM & Toppcorer er låst (frist var 26. juni kl. 21:00)'); return; }
   bigAnswers[qId]=name;
   localStorage.setItem('hra-big',JSON.stringify(bigAnswers));
   renderBigQ(); updateBadges(); updateOverview();
@@ -1147,7 +1153,7 @@ function selectBigTeam(qId, name) {
 }
 
 function saveBigText(qId) {
-  if (isBigQuestionsLocked()) { showToast('⛔ Fristen for VM & Toppcorer er passert (26. juni kl. 21:00)'); return; }
+  if (isBigQLocked()) { showToast('⛔ VM & Toppcorer er låst (frist var 26. juni kl. 21:00)'); return; }
   const val = document.getElementById('qi-'+qId).value.trim();
   if(!val) { showToast('⚠️ Skriv inn et svar'); return; }
   bigAnswers[qId]=val;
