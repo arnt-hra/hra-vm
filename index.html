@@ -1600,6 +1600,10 @@ function adminDeletePlayer(i) {
   showToast(name + ' er slettet');
 }
 
+function onResultInputBtn(el) {
+  onResultInput(el.getAttribute('data-mid'));
+}
+
 function onResultInput(matchId) {
   const hv = document.getElementById('rh-'+matchId).value;
   const av = document.getElementById('ra-'+matchId).value;
