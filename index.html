@@ -1268,8 +1268,8 @@ function updateOverview() {
   el.innerHTML = '';
   cards.forEach(function(c) {
     var pct = c.total ? Math.round(c.done/c.total*100) : 0;
-    var sc = c.done===c.total ? 'done' : c.done===0 ? 'empty' : 'partial';
-    var st = c.done===c.total ? '✅ Fullført!' : c.done===0 ? 'Ikke startet' : c.done+' av '+c.total+' gjort';
+    var sc = c.done===c.total ? 'done' : c.done===0 ? 'partial' : 'partial';
+    var st = c.done===c.total ? '✅ Fullført!' : c.done===0 ? '⚡ Tipp nå!' : c.done+' av '+c.total+' gjort';
     var div = document.createElement('div');
     div.className = 'co-card' + (c.done===c.total ? ' complete' : '');
     div.onclick = (function(contest) { return function() { jumpToContest(contest); }; })(c.contest);
@@ -1910,6 +1910,7 @@ else {
 initNotifBanner();
 renderDeadlineBanner();
 sbLoadAll();
+checkInAppReminder();
 </script>
 </body>
 </html>
