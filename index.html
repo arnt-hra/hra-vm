@@ -822,12 +822,12 @@ async function sbSaveResult(kampId, hjemme, borte) {
 // STATE
 // ═══════════════════════════════════════════════════
 const MATCH_DATES = {
-  'g1': '2026-06-16T18:00:00+02:00',
-  'g2': '2026-06-22T21:00:00+02:00',
-  'g3': '2026-06-26T21:00:00+02:00',
-  'g4': '2026-06-14T21:00:00+02:00',
-  'g5': '2026-06-20T21:00:00+02:00',
-  'g6': '2026-06-25T21:00:00+02:00',
+  'g1': '2026-06-16T22:00:00Z',  // Irak-Norge (00:00 norsk tid 17.jun) SPILT
+  'g2': '2026-06-22T20:00:00Z',  // Norge-Senegal (02:00 norsk tid 23.jun)
+  'g3': '2026-06-26T19:00:00Z',  // Norge-Frankrike (21:00 norsk tid 26.jun)
+  'g4': '2026-06-14T19:00:00Z',  // Sverige-Tunisia SPILT
+  'g5': '2026-06-20T19:00:00Z',  // Nederland-Sverige
+  'g6': '2026-06-25T19:00:00Z',  // Japan-Sverige
 };
 function isMatchLocked(matchId) {
   var d = MATCH_DATES[matchId];
