@@ -283,6 +283,7 @@ main{max-width:1180px;margin:0 auto;padding:24px 24px 100px}
   <div class="hero-title">Fotball<br><span>VM 2026</span></div>
   <div class="hero-year">USA · CANADA · MEXICO</div>
   <div class="hero-desc">Tipp kampene hele veien til finalen — vinneren kåres etter den siste fløyta!</div>
+<div id="deadline-banner" style="margin-top:16px;max-width:560px;margin-left:auto;margin-right:auto"></div>
 </div>
 
 <div id="notif-banner" style="display:none;background:rgba(0,168,232,0.1);border-bottom:1px solid rgba(0,168,232,0.2);padding:10px 24px">
@@ -1146,6 +1147,7 @@ function selectBigTeam(qId, name) {
 }
 
 function saveBigText(qId) {
+  if (isBigQuestionsLocked()) { showToast('⛔ Fristen for VM & Toppcorer er passert (26. juni kl. 21:00)'); return; }
   const val = document.getElementById('qi-'+qId).value.trim();
   if(!val) { showToast('⚠️ Skriv inn et svar'); return; }
   bigAnswers[qId]=val;
@@ -1853,6 +1855,32 @@ function updateNotifStatus() {
   badge.appendChild(span);
 }
 
+function renderDeadlineBanner() {
+  var el = document.getElementById('deadline-banner');
+  if (!el) return;
+  var now = Date.now();
+  var deadlines = [
+    { label: '🇳🇴 Irak – Norge', time: '2026-06-16T22:00:00Z', locked: true },
+    { label: '🇸🇪 Sverige – Tunisia', time: '2026-06-14T19:00:00Z', locked: true },
+    { label: '🇳🇱 Nederland – Sverige', time: '2026-06-20T19:00:00Z', locked: false },
+    { label: '🇳🇴 Norge – Senegal', time: '2026-06-22T20:00:00Z', locked: false },
+    { label: '🇯🇵 Japan – Sverige', time: '2026-06-25T19:00:00Z', locked: false },
+    { label: '🇳🇴 Norge – Frankrike + VM/Toppcorer', time: '2026-06-26T19:00:00Z', locked: false },
+  ];
+  var upcoming = deadlines.filter(function(d) {
+    return !d.locked && now < new Date(d.time).getTime();
+  });
+  if (upcoming.length === 0) { el.innerHTML = ''; return; }
+  var next = upcoming[0];
+  var msLeft = new Date(next.time).getTime() - now - 30*60*1000;
+  var hoursLeft = Math.floor(msLeft / (1000*60*60));
+  var daysLeft = Math.floor(hoursLeft / 24);
+  var timeStr = daysLeft > 0 ? daysLeft + ' dag' + (daysLeft>1?'er':'') : hoursLeft + ' time' + (hoursLeft!==1?'r':'');
+  el.innerHTML = '<div style="background:rgba(245,216,0,.12);border:1px solid rgba(245,216,0,.35);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--white)">' +
+    '⏰ <strong>Neste frist:</strong> ' + next.label + ' — stenger om <strong style="color:var(--gold)">' + timeStr + '</strong>. Husk å lagre tipsene dine!' +
+    '</div>';
+}
+
 // ═══════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════
@@ -1874,6 +1902,7 @@ else {
   document.querySelector('main').style.display='none';
 }
 initNotifBanner();
+renderDeadlineBanner();
 sbLoadAll();
 </script>
 </body>
