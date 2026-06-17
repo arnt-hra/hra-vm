@@ -767,7 +767,7 @@ async function sbRegister(name, dept) {
 async function sbSyncCurrentUser() {
   if (!currentUser) return;
   try {
-    const ex = await sbReq('deltakere?navn=eq.' + encodeURIComponent(currentUser.name) + '&select=id,tips_kr,tips_no,tips_big,tips_nv');
+    const ex = await sbReq('deltakere?navn=eq.' + encodeURIComponent(currentUser.name) + '&select=id,tips_kr,tips_big,tips_nv');
     
     // Check if local data has tips that Supabase is missing
     const hasLocalKr  = Object.keys(krPreds).length > 0;
@@ -793,8 +793,7 @@ async function sbSyncCurrentUser() {
       // User exists — check if Supabase tips are empty but local has data
       const sbRow = ex[0];
       const sbHasTips = (sbRow.tips_kr && Object.keys(sbRow.tips_kr).length > 0) ||
-                        (sbRow.tips_no && Object.keys(sbRow.tips_no).length > 0) ||
-                        (sbRow.tips_big && Object.keys(sbRow.tips_big).length > 0) ||
+                                                (sbRow.tips_big && Object.keys(sbRow.tips_big).length > 0) ||
                         (sbRow.tips_nv && Object.keys(sbRow.tips_nv).length > 0);
       if (!sbHasTips) {
         // Supabase is empty but local has tips — sync automatically
