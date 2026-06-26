@@ -713,7 +713,7 @@ async function sbLoadAll() {
       if (typeof updateOverview === 'function') updateOverview();
     }, 0);
     // Load all tips AFTER results are in memory
-    if (typeof loadAllTipsAndRefreshLb === 'function') loadAllTipsAndRefreshLb();
+    if (typeof loadAllTipsAndRefreshLb === 'function') await loadAllTipsAndRefreshLb();
   } catch(e) { console.warn('Supabase load failed:', e.message); }
 }
 
@@ -1344,8 +1344,8 @@ function renderLb() {
           var real = results[m.id] || {};
           if (pred.home !== undefined && pred.home !== '' &&
               real.home !== undefined && real.home !== '' &&
-              parseInt(pred.home) === parseInt(real.home) &&
-              parseInt(pred.away) === parseInt(real.away)) {
+              Number(pred.home) === Number(real.home) &&
+              Number(pred.away) === Number(real.away)) {
             exactCount++;
           }
         });
@@ -1746,8 +1746,8 @@ async function loadAllTipsAndRefreshLb() {
           var real = results[m.id] || {};
           if (pred.home !== undefined && pred.home !== '' &&
               real.home !== undefined && real.home !== '' &&
-              parseInt(pred.home) === parseInt(real.home) &&
-              parseInt(pred.away) === parseInt(real.away)) {
+              Number(pred.home) === Number(real.home) &&
+              Number(pred.away) === Number(real.away)) {
             exactCount++;
           }
         });
