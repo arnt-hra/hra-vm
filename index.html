@@ -2026,21 +2026,31 @@ const CONTESTS = [
 
 
 function showWinnerPopup(contest) {
+  // If data not ready, retry
+  if (!allParticipantData || allParticipantData.length === 0) {
+    setTimeout(function() { showWinnerPopup(contest); }, 1000);
+    return;
+  }
+
   var sorted = allParticipantData.map(function(p) {
     return { name:p.name, dept:p.dept, score:p[contest.scoreKey]||0, exact:p.exact||0 };
   }).sort(function(a,b) {
     if (b.score!==a.score) return b.score-a.score;
     if (b.exact!==a.exact) return b.exact-a.exact;
     return a.name.localeCompare(b.name,'no');
-  }).filter(function(p) { return p.score > 0; });
+  });
 
-  if (sorted.length === 0) return;
+  // Show all participants, not just those with points > 0
+  // (some may have 0 if they didn't tip that contest)
+  var withPoints = sorted.filter(function(p) { return p.score > 0; });
+  var top3 = (withPoints.length > 0 ? withPoints : sorted).slice(0, 3);
+  if (top3.length === 0) return;
 
   document.getElementById('popup-eyebrow').textContent = contest.icon + ' ' + contest.label;
   document.getElementById('popup-title').textContent = 'Gratulerer ' + sorted[0].name + '!';
   document.getElementById('popup-subtitle').textContent = contest.subtitle;
 
-  var top3 = sorted.slice(0,3);
+  // top3 already set above
   var order = top3.length >= 2 ? [top3[1],top3[0],top3[2]].filter(Boolean) : [top3[0]];
   var oClass = top3.length >= 2 ? ['p2','p1','p3'] : ['p1'];
   var oMedal = top3.length >= 2 ? ['🥈','🥇','🥉'] : ['🥇'];
