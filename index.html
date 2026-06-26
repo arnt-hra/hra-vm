@@ -1330,7 +1330,8 @@ function renderLb() {
     // Use server-calculated data (most accurate)
     data = allParticipantData.map(p => ({
       name: p.name, dept: p.dept,
-      kr: p.kr, vm: p.vm, no: 0, nv: p.nv
+      kr: p.kr, vm: p.vm, no: 0, nv: p.nv,
+      exact: p.exact || 0
     }));
   } else if (hasReal && players.length > 0) {
     players.forEach(p => {
