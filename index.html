@@ -2023,38 +2023,7 @@ const CONTESTS = [
     subtitle:'Turneringens toppcorer er kåret!', scoreKey:'vm' },
 ];
 
-function checkWinnerPopup() {
-  if (!currentUser) return;
-  if (!allParticipantData || allParticipantData.length === 0) return;
 
-  const shown = JSON.parse(sessionStorage.getItem('hra-popup-shown') || '[]');
-  const groupMatches = ['g1','g2','g3','g4','g5','g6'];
-
-  const allGroupDone = groupMatches.every(function(id) {
-    var r = results[id];
-    return r && r.home !== '' && r.home !== undefined;
-  });
-
-  if (allGroupDone && !shown.includes('kampresultater')) {
-    shown.push('kampresultater');
-    sessionStorage.setItem('hra-popup-shown', JSON.stringify(shown));
-    var contest = CONTESTS.find(function(c) { return c.id === 'kampresultater'; });
-    if (contest) { showWinnerPopup(contest); return; }
-  }
-
-  var afterFinal = Date.now() > new Date('2026-07-19T21:00:00Z').getTime();
-  if (afterFinal) {
-    var ids = ['vm-vinner','toppcorer'];
-    for (var i=0; i<ids.length; i++) {
-      if (!shown.includes(ids[i])) {
-        shown.push(ids[i]);
-        sessionStorage.setItem('hra-popup-shown', JSON.stringify(shown));
-        var c2 = CONTESTS.find(function(c) { return c.id === ids[i]; });
-        if (c2) { showWinnerPopup(c2); return; }
-      }
-    }
-  }
-}
 
 function showWinnerPopup(contest) {
   var sorted = allParticipantData.map(function(p) {
@@ -2087,6 +2056,42 @@ function showWinnerPopup(contest) {
   }).join('');
 
   document.getElementById('winner-popup-overlay').classList.add('visible');
+  launchConfetti();
+}
+
+function launchConfetti() {
+  var colors = ['#f5d800','#00a8e8','#2ea832','#ff6b6b','#ffffff'];
+  var container = document.getElementById('winner-popup-overlay');
+  for (var i = 0; i < 80; i++) {
+    (function(i) {
+      setTimeout(function() {
+        var el = document.createElement('div');
+        el.style.cssText = 'position:fixed;width:8px;height:8px;border-radius:2px;pointer-events:none;z-index:1001;';
+        el.style.background = colors[Math.floor(Math.random()*colors.length)];
+        el.style.left = Math.random()*100 + 'vw';
+        el.style.top = '-10px';
+        el.style.opacity = '1';
+        document.body.appendChild(el);
+        var angle = (Math.random()-0.5)*6;
+        var speed = 2 + Math.random()*4;
+        var drift = (Math.random()-0.5)*3;
+        var tick = 0;
+        var iv = setInterval(function() {
+          tick++;
+          var top = parseFloat(el.style.top)+speed;
+          var left = parseFloat(el.style.left)+drift;
+          el.style.top = top+'px';
+          el.style.left = left+'px';
+          el.style.transform = 'rotate('+(tick*angle*10)+'deg)';
+          el.style.opacity = Math.max(0, 1-top/window.innerHeight);
+          if (top > window.innerHeight || parseFloat(el.style.opacity) <= 0) {
+            clearInterval(iv);
+            el.remove();
+          }
+        }, 16);
+      }, i*30);
+    })(i);
+  }
 }
 
 function adminMarkContest(id) {
@@ -2105,6 +2110,44 @@ function adminUnmarkContest(id) {
 
 function closeWinnerPopup() {
   document.getElementById('winner-popup-overlay').classList.remove('visible');
+}
+
+function checkWinnerPopup() {
+  if (!currentUser) return;
+
+  // Which contests has admin marked as finished?
+  var finished = JSON.parse(localStorage.getItem('hra-finished-contests') || '[]');
+
+  // Also auto-detect group stage done
+  var groupMatches = ['g1','g2','g3','g4','g5','g6'];
+  var allGroupDone = groupMatches.every(function(id) {
+    var r = results[id];
+    return r && r.home !== '' && r.home !== undefined;
+  });
+  if (allGroupDone && !finished.includes('kampresultater')) {
+    finished.push('kampresultater');
+  }
+
+  if (finished.length === 0) return;
+
+  // Which have we already shown this session?
+  var shown = JSON.parse(sessionStorage.getItem('hra-popup-shown') || '[]');
+
+  for (var i = 0; i < finished.length; i++) {
+    var contestId = finished[i];
+    if (shown.includes(contestId)) continue;
+
+    // Need allParticipantData - if not ready, retry in 1s
+    if (!allParticipantData || allParticipantData.length === 0) {
+      setTimeout(checkWinnerPopup, 1000);
+      return;
+    }
+
+    shown.push(contestId);
+    sessionStorage.setItem('hra-popup-shown', JSON.stringify(shown));
+    var contest = CONTESTS.find(function(c) { return c.id === contestId; });
+    if (contest) { showWinnerPopup(contest); return; }
+  }
 }
 
 // INIT
