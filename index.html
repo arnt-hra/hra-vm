@@ -293,7 +293,7 @@ main{max-width:1180px;margin:0 auto;padding:24px 24px 100px}
       <button onclick="openAdminGate()" style="color:rgba(245,216,0,.5);font-size:11px" title="Adminpanel">⚙</button>
     </nav>
     <div class="user-badge" id="user-badge" style="display:none">
-      <button onclick="testPopup()" style="background:var(--gold);color:#000;border:none;font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;margin-right:6px">Test popup</button>
+
       ⚽ <span id="user-badge-name" style="color:var(--white);font-weight:600"></span>
     </div>
   </div>
@@ -2066,7 +2066,7 @@ function showWinnerPopup(contest) {
     '</div>';
   }).join('');
 
-  document.getElementById('winner-popup-overlay').classList.add('visible');
+  var po = document.getElementById('winner-popup-overlay'); if(po) po.style.display='flex';
   launchConfetti();
 }
 
@@ -2143,7 +2143,7 @@ function testPopup() {
 }
 
 function closeWinnerPopup() {
-  document.getElementById('winner-popup-overlay').classList.remove('visible');
+  var po = document.getElementById('winner-popup-overlay'); if(po) po.style.display='none';
 }
 
 function checkWinnerPopup() {
@@ -2197,5 +2197,18 @@ renderDeadlineBanner();
 sbLoadAll();
 checkInAppReminder();
 </script>
+
+<!-- WINNER POPUP -->
+<div id="winner-popup-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:linear-gradient(135deg,#0a1f0e,#081508);border:2px solid var(--gold);border-radius:20px;padding:32px 28px;max-width:480px;width:100%;text-align:center;position:relative;box-shadow:0 0 60px rgba(245,216,0,.2)">
+    <button onclick="closeWinnerPopup()" style="position:absolute;top:14px;right:18px;background:none;border:none;color:var(--grey);font-size:24px;cursor:pointer;line-height:1">&times;</button>
+    <div id="popup-eyebrow" style="font-size:11px;letter-spacing:3px;color:var(--blue);text-transform:uppercase;font-weight:700;margin-bottom:8px"></div>
+    <div id="popup-title" style="font-size:26px;font-weight:900;color:var(--gold);margin-bottom:4px">Gratulerer!</div>
+    <div id="popup-subtitle" style="font-size:13px;color:var(--grey);margin-bottom:24px"></div>
+    <div id="popup-podium" style="display:flex;align-items:flex-end;justify-content:center;gap:8px;margin-bottom:20px"></div>
+    <button onclick="closeWinnerPopup()" style="background:var(--gold);color:#0a1f0e;border:none;border-radius:10px;font-weight:800;font-size:14px;padding:12px 28px;cursor:pointer">&#x1f389; Supert, takk!</button>
+  </div>
+</div>
+
 </body>
 </html>
