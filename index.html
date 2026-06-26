@@ -2097,8 +2097,14 @@ function launchConfetti() {
 function adminMarkContest(id) {
   var f = JSON.parse(localStorage.getItem('hra-finished-contests') || '[]');
   if (!f.includes(id)) { f.push(id); localStorage.setItem('hra-finished-contests', JSON.stringify(f)); }
+  // Clear shown so popup shows again
+  var shown = JSON.parse(sessionStorage.getItem('hra-popup-shown') || '[]');
+  shown = shown.filter(function(s) { return s !== id; });
+  sessionStorage.setItem('hra-popup-shown', JSON.stringify(shown));
   showToast('🏆 Konkurranse markert som avgjort!');
   renderAdminPanel();
+  // Preview popup immediately
+  setTimeout(checkWinnerPopup, 300);
 }
 function adminUnmarkContest(id) {
   var f = JSON.parse(localStorage.getItem('hra-finished-contests') || '[]');
@@ -2115,29 +2121,18 @@ function closeWinnerPopup() {
 function checkWinnerPopup() {
   if (!currentUser) return;
 
-  // Which contests has admin marked as finished?
+  // Only use admin-controlled list
   var finished = JSON.parse(localStorage.getItem('hra-finished-contests') || '[]');
-
-  // Also auto-detect group stage done
-  var groupMatches = ['g1','g2','g3','g4','g5','g6'];
-  var allGroupDone = groupMatches.every(function(id) {
-    var r = results[id];
-    return r && r.home !== '' && r.home !== undefined;
-  });
-  if (allGroupDone && !finished.includes('kampresultater')) {
-    finished.push('kampresultater');
-  }
-
   if (finished.length === 0) return;
 
-  // Which have we already shown this session?
+  // Which have we shown this session?
   var shown = JSON.parse(sessionStorage.getItem('hra-popup-shown') || '[]');
 
   for (var i = 0; i < finished.length; i++) {
     var contestId = finished[i];
     if (shown.includes(contestId)) continue;
 
-    // Need allParticipantData - if not ready, retry in 1s
+    // If allParticipantData not ready yet, retry in 1s
     if (!allParticipantData || allParticipantData.length === 0) {
       setTimeout(checkWinnerPopup, 1000);
       return;
