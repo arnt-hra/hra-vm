@@ -262,7 +262,7 @@ main{max-width:1180px;margin:0 auto;padding:24px 24px 100px}
 .winner-popup-subtitle{font-size:13px;color:var(--grey);margin-bottom:24px}
 .winner-podium{display:flex;align-items:flex-end;justify-content:center;gap:8px;margin-bottom:20px}
 .podium-place{flex:1;max-width:130px;border-radius:12px 12px 0 0;padding:14px 10px}
-.podium-place.p1{background:rgba(245,216,0,.12);border:1px solid rgba(245,216,0,.3);min-height:160px;align-self:flex-end}
+.podium-place.p1{background:rgba(245,216,0,.12);border:2px solid rgba(245,216,0,.5);min-height:160px;align-self:flex-end}
 .podium-place.p2{background:rgba(0,168,232,.08);border:1px solid rgba(0,168,232,.2);min-height:120px;align-self:flex-end}
 .podium-place.p3{background:rgba(46,168,50,.08);border:1px solid rgba(46,168,50,.2);min-height:90px;align-self:flex-end}
 .podium-medal{font-size:28px;margin-bottom:6px}
@@ -2062,9 +2062,11 @@ function showWinnerPopup(contest) {
   document.getElementById('popup-subtitle').textContent = contest.subtitle;
 
   // top3 already set above
-  var order = top3.length >= 2 ? [top3[1],top3[0],top3[2]].filter(Boolean) : [top3[0]];
-  var oClass = top3.length >= 2 ? ['p2','p1','p3'] : ['p1'];
-  var oMedal = top3.length >= 2 ? ['🥈','🥇','🥉'] : ['🥇'];
+  // Order: 1st, 2nd, 3rd left to right — height controlled by CSS class
+  var order = top3.length >= 3 ? [top3[0],top3[1],top3[2]] :
+              top3.length === 2 ? [top3[0],top3[1]] : [top3[0]];
+  var oClass = ['p1','p2','p3'];
+  var oMedal = ['🥇','🥈','🥉'];
 
   document.getElementById('popup-podium').innerHTML = order.map(function(p,i) {
     return '<div class="podium-place '+oClass[i]+'">' +
@@ -2073,6 +2075,7 @@ function showWinnerPopup(contest) {
       '<div class="podium-dept">'+p.dept+'</div>' +
       '<div class="podium-pts">'+p.score+'</div>' +
       '<div class="podium-pts-label">poeng</div>' +
+      (p.exact > 0 ? '<div style="font-size:11px;color:var(--gold);margin-top:2px">✓'+p.exact+' eksakte</div>' : '') +
     '</div>';
   }).join('');
 
