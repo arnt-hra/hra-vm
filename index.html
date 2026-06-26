@@ -354,7 +354,6 @@ main{max-width:1180px;margin:0 auto;padding:24px 24px 100px}
     <button class="lb-fb active" onclick="switchLb('total',this)">Totalt</button>
     <button class="lb-fb" onclick="switchLb('kampresultater',this)">Kampresultater</button>
     <button class="lb-fb" onclick="switchLb('vm-vinner',this)">VM &amp; Toppcorer</button>
-    <button class="lb-fb" onclick="switchLb('norge',this)">Norges kamper</button>
     <button class="lb-fb" onclick="switchLb('norges-vei',this)">Norges vei</button>
   </div>
   <div class="lb-filter">
@@ -1744,12 +1743,9 @@ async function loadAllTipsAndRefreshLb() {
         r.matches.filter(function(m) { return !m.tbd; }).forEach(function(m) {
           var pred = tipKr[m.id] || {};
           var real = results[m.id] || {};
-          if (pred.home !== undefined && pred.home !== '' &&
-              real.home !== undefined && real.home !== '' &&
-              Number(pred.home) === Number(real.home) &&
-              Number(pred.away) === Number(real.away)) {
-            exactCount++;
-          }
+          // Use calcPoints to determine if exact (returns exactPts)
+          var pts = calcPoints(pred.home, pred.away, real.home, real.away, r.exactPts, r.winnerPts);
+          if (pts === r.exactPts && r.exactPts > 0) exactCount++;
         });
       });
 
