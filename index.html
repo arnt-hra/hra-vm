@@ -262,9 +262,9 @@ main{max-width:1180px;margin:0 auto;padding:24px 24px 100px}
 .winner-popup-subtitle{font-size:13px;color:var(--grey);margin-bottom:24px}
 .winner-podium{display:flex;align-items:flex-end;justify-content:center;gap:8px;margin-bottom:20px}
 .podium-place{flex:1;max-width:130px;border-radius:12px 12px 0 0;padding:14px 10px}
-.podium-place.p1{background:rgba(245,216,0,.12);border:1px solid rgba(245,216,0,.3);min-height:140px}
-.podium-place.p2{background:rgba(0,168,232,.08);border:1px solid rgba(0,168,232,.2);min-height:110px}
-.podium-place.p3{background:rgba(46,168,50,.08);border:1px solid rgba(46,168,50,.2);min-height:90px}
+.podium-place.p1{background:rgba(245,216,0,.12);border:1px solid rgba(245,216,0,.3);min-height:160px;align-self:flex-end}
+.podium-place.p2{background:rgba(0,168,232,.08);border:1px solid rgba(0,168,232,.2);min-height:120px;align-self:flex-end}
+.podium-place.p3{background:rgba(46,168,50,.08);border:1px solid rgba(46,168,50,.2);min-height:90px;align-self:flex-end}
 .podium-medal{font-size:28px;margin-bottom:6px}
 .podium-name{font-size:13px;font-weight:700;color:var(--white);margin-bottom:3px;word-break:break-word}
 .podium-dept{font-size:10px;color:var(--grey);margin-bottom:6px}
@@ -715,8 +715,18 @@ async function sbLoadAll() {
     const res = await sbReq('resultater?select=*');
     if (res) {
       results = {};
-      res.forEach(r => { results[r.kamp_id] = {home:r.hjemme_mal, away:r.borte_mal}; });
+      var finishedContests = [];
+      res.forEach(r => {
+        if (r.kamp_id.startsWith('contest-')) {
+          finishedContests.push(r.kamp_id.replace('contest-', ''));
+        } else {
+          results[r.kamp_id] = {home:r.hjemme_mal, away:r.borte_mal};
+        }
+      });
       localStorage.setItem('hra-results', JSON.stringify(results));
+      if (finishedContests.length > 0) {
+        localStorage.setItem('hra-finished-contests', JSON.stringify(finishedContests));
+      }
     }
     if (currentUser) {
       const me = await sbReq('deltakere?navn=eq.' + encodeURIComponent(currentUser.name));
@@ -2066,6 +2076,16 @@ function showWinnerPopup(contest) {
     '</div>';
   }).join('');
 
+  var cta = document.getElementById('popup-cta');
+  if (cta) {
+    var ctaTexts = {
+      'kampresultater': '🎯 Det er fortsatt VM-vinner, Toppcorer og Norges vei igjen — husk å tippe!',
+      'norges-vei': '🏆 VM-vinner og Toppcorer avgjøres etter finalen 19. juli!',
+      'vm-vinner': '🎯 Toppscorer avgjøres snart — husk å ha tippet!',
+      'toppcorer': '🏆 Nå er alle konkurransen avgjort. Takk for deltakelsen!'
+    };
+    cta.textContent = ctaTexts[contest.id] || '';
+  }
   var po = document.getElementById('winner-popup-overlay'); if(po) po.style.display='flex';
   launchConfetti();
 }
@@ -2105,17 +2125,23 @@ function launchConfetti() {
   }
 }
 
-function adminMarkContest(id) {
+async function adminMarkContest(id) {
   var f = JSON.parse(localStorage.getItem('hra-finished-contests') || '[]');
   if (!f.includes(id)) { f.push(id); localStorage.setItem('hra-finished-contests', JSON.stringify(f)); }
-  // Clear shown so popup shows again
+  // Save to Supabase so ALL users see popup
+  try {
+    await sbReq('resultater?kamp_id=eq.contest-' + id, {method:'DELETE'});
+    await sbReq('resultater', {method:'POST',
+      body: JSON.stringify({kamp_id: 'contest-' + id, hjemme_mal: 1, borte_mal: 0})
+    });
+  } catch(e) { console.warn('Could not save contest status:', e.message); }
+  // Clear shown so popup shows again for admin
   var shown = JSON.parse(sessionStorage.getItem('hra-popup-shown') || '[]');
   shown = shown.filter(function(s) { return s !== id; });
   sessionStorage.setItem('hra-popup-shown', JSON.stringify(shown));
   showToast('🏆 Konkurranse markert som avgjort!');
   renderAdminPanel();
-  // Preview popup immediately
-  setTimeout(checkWinnerPopup, 300);
+  setTimeout(checkWinnerPopup, 500);
 }
 function adminUnmarkContest(id) {
   var f = JSON.parse(localStorage.getItem('hra-finished-contests') || '[]');
@@ -2206,6 +2232,7 @@ checkInAppReminder();
     <div id="popup-title" style="font-size:26px;font-weight:900;color:var(--gold);margin-bottom:4px">Gratulerer!</div>
     <div id="popup-subtitle" style="font-size:13px;color:var(--grey);margin-bottom:24px"></div>
     <div id="popup-podium" style="display:flex;align-items:flex-end;justify-content:center;gap:8px;margin-bottom:20px"></div>
+    <div id="popup-cta" style="font-size:12px;color:var(--grey);margin-bottom:12px;line-height:1.6"></div>
     <button onclick="closeWinnerPopup()" style="background:var(--gold);color:#0a1f0e;border:none;border-radius:10px;font-weight:800;font-size:14px;padding:12px 28px;cursor:pointer">&#x1f389; Supert, takk!</button>
   </div>
 </div>
