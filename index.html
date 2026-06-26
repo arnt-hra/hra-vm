@@ -252,6 +252,26 @@ main{max-width:1180px;margin:0 auto;padding:24px 24px 100px}
   .admin-points-preview{font-size:11px;color:var(--grey-mid);margin-top:10px;padding:10px 12px;background:rgba(0,0,0,.2);border-radius:6px}
   .admin-points-preview strong{color:var(--white)}
   .gold-light{color:var(--gold-light,#fff176)}
+
+.winner-popup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.winner-popup-overlay.visible{display:flex}
+.winner-popup{background:linear-gradient(135deg,#0a1f0e,#081508);border:2px solid var(--gold);border-radius:20px;padding:32px 28px;max-width:480px;width:100%;text-align:center;position:relative;box-shadow:0 0 60px rgba(245,216,0,.2)}
+.winner-popup-close{position:absolute;top:14px;right:18px;background:none;border:none;color:var(--grey);font-size:24px;cursor:pointer;line-height:1}
+.winner-popup-eyebrow{font-size:11px;letter-spacing:3px;color:var(--blue);text-transform:uppercase;font-weight:700;margin-bottom:8px}
+.winner-popup-title{font-size:26px;font-weight:900;color:var(--gold);margin-bottom:4px}
+.winner-popup-subtitle{font-size:13px;color:var(--grey);margin-bottom:24px}
+.winner-podium{display:flex;align-items:flex-end;justify-content:center;gap:8px;margin-bottom:20px}
+.podium-place{flex:1;max-width:130px;border-radius:12px 12px 0 0;padding:14px 10px}
+.podium-place.p1{background:rgba(245,216,0,.12);border:1px solid rgba(245,216,0,.3);min-height:140px}
+.podium-place.p2{background:rgba(0,168,232,.08);border:1px solid rgba(0,168,232,.2);min-height:110px}
+.podium-place.p3{background:rgba(46,168,50,.08);border:1px solid rgba(46,168,50,.2);min-height:90px}
+.podium-medal{font-size:28px;margin-bottom:6px}
+.podium-name{font-size:13px;font-weight:700;color:var(--white);margin-bottom:3px;word-break:break-word}
+.podium-dept{font-size:10px;color:var(--grey);margin-bottom:6px}
+.podium-pts{font-size:22px;font-weight:900;color:var(--gold)}
+.podium-pts-label{font-size:9px;color:var(--grey);text-transform:uppercase;letter-spacing:1px}
+.winner-popup-btn{background:var(--gold);color:#0a1f0e;border:none;border-radius:10px;font-weight:800;font-size:14px;padding:12px 28px;cursor:pointer;margin-top:4px}
+
 </style>
 </head>
 <body>
@@ -713,6 +733,7 @@ async function sbLoadAll() {
     }, 0);
     // Load all tips AFTER results are in memory
     if (typeof loadAllTipsAndRefreshLb === 'function') await loadAllTipsAndRefreshLb();
+    if (typeof checkWinnerPopup === 'function') setTimeout(checkWinnerPopup, 500);
   } catch(e) { console.warn('Supabase load failed:', e.message); }
 }
 
@@ -1963,6 +1984,88 @@ function renderDeadlineBanner() {
 }
 
 // ═══════════════════════════════════════════════════
+
+const CONTESTS = [
+  { id:'kampresultater', label:'Kampresultater gruppespill', icon:'⚽',
+    subtitle:'Nordisk gruppespill er over — her er poengoversikten!', scoreKey:'kr' },
+  { id:'norges-vei', label:'Norges vei', icon:'🇳🇴',
+    subtitle:'Konkurransen om Norges vei i VM er avgjort!', scoreKey:'nv' },
+  { id:'vm-vinner', label:'VM-vinner', icon:'🏆',
+    subtitle:'VM er over — hvem gjettet riktig?', scoreKey:'vm' },
+  { id:'toppcorer', label:'Toppcorer', icon:'🎯',
+    subtitle:'Turneringens toppcorer er kåret!', scoreKey:'vm' },
+];
+
+function checkWinnerPopup() {
+  if (!currentUser) return;
+  if (!allParticipantData || allParticipantData.length === 0) return;
+
+  const shown = JSON.parse(sessionStorage.getItem('hra-popup-shown') || '[]');
+  const groupMatches = ['g1','g2','g3','g4','g5','g6'];
+
+  const allGroupDone = groupMatches.every(function(id) {
+    var r = results[id];
+    return r && r.home !== '' && r.home !== undefined;
+  });
+
+  if (allGroupDone && !shown.includes('kampresultater')) {
+    shown.push('kampresultater');
+    sessionStorage.setItem('hra-popup-shown', JSON.stringify(shown));
+    var contest = CONTESTS.find(function(c) { return c.id === 'kampresultater'; });
+    if (contest) { showWinnerPopup(contest); return; }
+  }
+
+  var afterFinal = Date.now() > new Date('2026-07-19T21:00:00Z').getTime();
+  if (afterFinal) {
+    var ids = ['vm-vinner','toppcorer'];
+    for (var i=0; i<ids.length; i++) {
+      if (!shown.includes(ids[i])) {
+        shown.push(ids[i]);
+        sessionStorage.setItem('hra-popup-shown', JSON.stringify(shown));
+        var c2 = CONTESTS.find(function(c) { return c.id === ids[i]; });
+        if (c2) { showWinnerPopup(c2); return; }
+      }
+    }
+  }
+}
+
+function showWinnerPopup(contest) {
+  var sorted = allParticipantData.map(function(p) {
+    return { name:p.name, dept:p.dept, score:p[contest.scoreKey]||0, exact:p.exact||0 };
+  }).sort(function(a,b) {
+    if (b.score!==a.score) return b.score-a.score;
+    if (b.exact!==a.exact) return b.exact-a.exact;
+    return a.name.localeCompare(b.name,'no');
+  }).filter(function(p) { return p.score > 0; });
+
+  if (sorted.length === 0) return;
+
+  document.getElementById('popup-eyebrow').textContent = contest.icon + ' ' + contest.label;
+  document.getElementById('popup-title').textContent = 'Gratulerer ' + sorted[0].name + '!';
+  document.getElementById('popup-subtitle').textContent = contest.subtitle;
+
+  var top3 = sorted.slice(0,3);
+  var order = top3.length >= 2 ? [top3[1],top3[0],top3[2]].filter(Boolean) : [top3[0]];
+  var oClass = top3.length >= 2 ? ['p2','p1','p3'] : ['p1'];
+  var oMedal = top3.length >= 2 ? ['🥈','🥇','🥉'] : ['🥇'];
+
+  document.getElementById('popup-podium').innerHTML = order.map(function(p,i) {
+    return '<div class="podium-place '+oClass[i]+'">' +
+      '<div class="podium-medal">'+oMedal[i]+'</div>' +
+      '<div class="podium-name">'+p.name+'</div>' +
+      '<div class="podium-dept">'+p.dept+'</div>' +
+      '<div class="podium-pts">'+p.score+'</div>' +
+      '<div class="podium-pts-label">poeng</div>' +
+    '</div>';
+  }).join('');
+
+  document.getElementById('winner-popup-overlay').classList.add('visible');
+}
+
+function closeWinnerPopup() {
+  document.getElementById('winner-popup-overlay').classList.remove('visible');
+}
+
 // INIT
 // ═══════════════════════════════════════════════════
 renderRounds();
