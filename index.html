@@ -1327,7 +1327,21 @@ function renderLb() {
   } else if (hasReal && players.length > 0) {
     players.forEach(p => {
       const pts = getRealPts(p.name);
-      data.push({name:p.name, dept:p.dept, kr:pts.kr, vm:0, no:pts.no, nv:0});
+      var exactCount = 0;
+      ROUNDS.forEach(function(r) {
+        if (r.locked) return;
+        r.matches.filter(function(m) { return !m.tbd; }).forEach(function(m) {
+          var pred = krPreds[m.id] || {};
+          var real = results[m.id] || {};
+          if (pred.home !== undefined && pred.home !== '' &&
+              real.home !== undefined && real.home !== '' &&
+              parseInt(pred.home) === parseInt(real.home) &&
+              parseInt(pred.away) === parseInt(real.away)) {
+            exactCount++;
+          }
+        });
+      });
+      data.push({name:p.name, dept:p.dept, kr:pts.kr, vm:0, no:pts.no, nv:0, exact:exactCount});
     });
   } else {
     data = [...MOCK_LB];
@@ -1336,7 +1350,11 @@ function renderLb() {
     const total = p.kr + p.vm + p.no + p.nv;
     const score = curLb==='total'?total:curLb==='kr'?p.kr:curLb==='vm'?p.vm:curLb==='no'?p.no:p.nv;
     return {...p, total, score};
-  }).sort((a,b) => b.score - a.score);
+  }).sort(function(a, b) {
+    if (b.score !== a.score) return b.score - a.score;
+    // Tiebreaker: most exact results (3p hits)
+    return (b.exact || 0) - (a.exact || 0);
+  });
 
   const c = document.getElementById('leaderboard-container');
 
@@ -1374,6 +1392,7 @@ function renderLb() {
       h += '<div><div class="lb-name">' + p.name + '</div><div class="lb-dept">' + p.dept + '</div></div>';
       h += '<div><div class="lb-pts">' + p.score + '</div><div class="lb-pts-label">poeng</div></div>';
       h += '<div><div class="lb-pts" style="font-size:16px;color:var(--grey)">' + p.total + '</div><div class="lb-pts-label">totalt</div></div>';
+      h += '<div style="text-align:right"><div style="font-size:14px;color:var(--gold)">✓' + (p.exact||0) + '</div><div class="lb-pts-label">eksakte</div></div>';
       h += '</div>';
     });
     c.innerHTML = h || '<div class="empty-state"><p>Ingen deltakere ennå</p></div>';
@@ -1707,12 +1726,29 @@ async function loadAllTipsAndRefreshLb() {
       // Norges vei - check if stage matches actual result
       // results['norges-vei'] would hold the actual stage
 
+      // Count exact results (3p hits) for tiebreaker
+      var exactCount = 0;
+      ROUNDS.forEach(function(r) {
+        if (r.locked) return;
+        r.matches.filter(function(m) { return !m.tbd; }).forEach(function(m) {
+          var pred = tipKr[m.id] || {};
+          var real = results[m.id] || {};
+          if (pred.home !== undefined && pred.home !== '' &&
+              real.home !== undefined && real.home !== '' &&
+              parseInt(pred.home) === parseInt(real.home) &&
+              parseInt(pred.away) === parseInt(real.away)) {
+            exactCount++;
+          }
+        });
+      });
+
       return {
         name: row.navn,
         dept: row.avdeling,
         kr: krPts,
         vm: vmPts,
         nv: nvPts,
+        exact: exactCount,
         total: krPts + vmPts + nvPts
       };
     });
