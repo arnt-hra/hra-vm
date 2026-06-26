@@ -711,9 +711,9 @@ async function sbLoadAll() {
       if (typeof renderPlayers === 'function') renderPlayers();
       if (typeof updateBadges === 'function') updateBadges();
       if (typeof updateOverview === 'function') updateOverview();
-      // Load all tips for leaderboard
-      if (typeof loadAllTipsAndRefreshLb === 'function') loadAllTipsAndRefreshLb();
     }, 0);
+    // Load all tips AFTER results are in memory
+    if (typeof loadAllTipsAndRefreshLb === 'function') loadAllTipsAndRefreshLb();
   } catch(e) { console.warn('Supabase load failed:', e.message); }
 }
 
@@ -949,7 +949,16 @@ function buildMatchGrid(matches, store, roundId) {
             oninput="onKrInput('${m.id}','${roundId}')">
         </div>
         <div class="match-date">${isTbd?'Dato ikke satt':m.date}</div>
-        <div class="match-pts">Eksakt: ${round.exactPts}p · Vinner: ${round.winnerPts}p</div>
+        <div class="match-pts">${(function(){
+          var real = results[m.id];
+          if (real && real.home !== '' && real.home !== undefined) {
+            var pred = krPreds[m.id] || {};
+            var pts = calcPoints(pred.home, pred.away, real.home, real.away, round.exactPts, round.winnerPts);
+            var icon = pts === round.exactPts ? '✅' : pts > 0 ? '👍' : (pred.home !== undefined && pred.home !== '' ? '❌' : '');
+            return 'Resultat: ' + real.home + '-' + real.away + (icon ? ' ' + icon + ' ' + pts + 'p' : '');
+          }
+          return isMatchLocked(m.id) ? '🔒 Låst' : 'Eksakt: ' + round.exactPts + 'p · Vinner: ' + round.winnerPts + 'p';
+        })()}</div>
         ${isPred?'<div class="save-tip">✓ Tippet</div>':''}
       </div>
       <div class="team-side right">
