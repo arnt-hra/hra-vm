@@ -1663,9 +1663,13 @@ function onResultInput(matchId) {
 function calcPoints(predHome, predAway, realHome, realAway, exactPts, winnerPts) {
   if(predHome==='' || predHome===undefined || predAway==='' || predAway===undefined) return 0;
   if(realHome==='' || realHome===undefined || realAway==='' || realAway===undefined) return 0;
-  if(predHome===realHome && predAway===realAway) return exactPts;
-  const predSign = Math.sign(predHome-predAway);
-  const realSign = Math.sign(realHome-realAway);
+  // Convert to numbers to handle string/int mismatch from JSON vs DB
+  var pH = Number(predHome), pA = Number(predAway);
+  var rH = Number(realHome), rA = Number(realAway);
+  if(isNaN(pH) || isNaN(pA) || isNaN(rH) || isNaN(rA)) return 0;
+  if(pH===rH && pA===rA) return exactPts;
+  const predSign = Math.sign(pH-pA);
+  const realSign = Math.sign(rH-rA);
   if(predSign===realSign) return winnerPts;
   return 0;
 }
