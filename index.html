@@ -1352,8 +1352,10 @@ function renderLb() {
     return {...p, total, score};
   }).sort(function(a, b) {
     if (b.score !== a.score) return b.score - a.score;
-    // Tiebreaker: most exact results (3p hits)
-    return (b.exact || 0) - (a.exact || 0);
+    // Tiebreaker 1: most exact results
+    if ((b.exact || 0) !== (a.exact || 0)) return (b.exact || 0) - (a.exact || 0);
+    // Tiebreaker 2: alphabetical
+    return a.name.localeCompare(b.name, 'no');
   });
 
   const c = document.getElementById('leaderboard-container');
