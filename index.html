@@ -1808,13 +1808,18 @@ async function loadAllTipsAndRefreshLb() {
     // Build leaderboard data from all participants
     allParticipantData = allRows.map(function(row) {
       var krPts = 0;
+      var gruppePts = 0;
+      var sluttspillPts = 0;
       var tipKr = row.tips_kr || {};
       ROUNDS.forEach(function(r) {
         if (r.locked) return;
         r.matches.filter(function(m) { return !m.tbd; }).forEach(function(m) {
           var pred = tipKr[m.id] || {};
           var real = results[m.id] || {};
-          krPts += calcPoints(pred.home, pred.away, real.home, real.away, r.exactPts, r.winnerPts);
+          var pts = calcPoints(pred.home, pred.away, real.home, real.away, r.exactPts, r.winnerPts);
+          krPts += pts;
+          if (r.id === 'gruppe') gruppePts += pts;
+          else sluttspillPts += pts;
         });
       });
 
