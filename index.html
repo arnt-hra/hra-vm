@@ -373,7 +373,8 @@ main{max-width:1180px;margin:0 auto;padding:24px 24px 100px}
   </div>
   <div class="lb-filter" style="margin-bottom:8px">
     <button class="lb-fb active" onclick="switchLb('total',this)">Totalt</button>
-    <button class="lb-fb" onclick="switchLb('kampresultater',this)">Kampresultater</button>
+    <button class="lb-fb" onclick="switchLb('gruppe',this)">Gruppespill</button>
+    <button class="lb-fb" onclick="switchLb('sluttspill',this)">Sluttspill</button>
     <button class="lb-fb" onclick="switchLb('vm-vinner',this)">VM &amp; Toppcorer</button>
     <button class="lb-fb" onclick="switchLb('norges-vei',this)">Norges vei</button>
   </div>
@@ -1667,6 +1668,7 @@ function renderAdminPanel() {
   var finished = JSON.parse(localStorage.getItem('hra-finished-contests') || '[]');
   var clist = [
     {id:'kampresultater', label:'⚽ Kampresultater gruppespill'},
+    {id:'sluttspill', label:'🏆 Totalvinner (etter sluttspill)'},
     {id:'norges-vei', label:'🇳🇴 Norges vei'},
     {id:'vm-vinner', label:'🏆 VM-vinner'},
     {id:'toppcorer', label:'🎯 Toppcorer'},
@@ -1844,6 +1846,8 @@ async function loadAllTipsAndRefreshLb() {
         name: row.navn,
         dept: row.avdeling,
         kr: krPts,
+        gruppe: gruppePts,
+        sluttspill: sluttspillPts,
         vm: vmPts,
         nv: nvPts,
         exact: exactCount,
@@ -2052,7 +2056,9 @@ function renderDeadlineBanner() {
 
 const CONTESTS = [
   { id:'kampresultater', label:'Kampresultater gruppespill', icon:'⚽',
-    subtitle:'Nordisk gruppespill er over — her er poengoversikten!', scoreKey:'kr' },
+    subtitle:'Nordisk gruppespill er over — her er poengoversikten!', scoreKey:'gruppe' },
+  { id:'sluttspill', label:'Totalt — gruppespill + sluttspill', icon:'🏆',
+    subtitle:'Turneringen er over — her er totalvinneren!', scoreKey:'total' },
   { id:'norges-vei', label:'Norges vei', icon:'🇳🇴',
     subtitle:'Konkurransen om Norges vei i VM er avgjort!', scoreKey:'nv' },
   { id:'vm-vinner', label:'VM-vinner', icon:'🏆',
