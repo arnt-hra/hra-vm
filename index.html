@@ -1243,7 +1243,7 @@ function renderNorwayPath() {
 
   var labelDiv = document.createElement('div');
   labelDiv.className = 'q-label';
-  labelDiv.textContent = 'Norges vei · 5 poeng';
+  labelDiv.textContent = 'Norges vei · 5 poeng' + (isNorwayPathLocked() ? ' 🔒 (Låst)' : '');
   card.appendChild(labelDiv);
 
   var titleDiv = document.createElement('div');
@@ -1257,6 +1257,7 @@ function renderNorwayPath() {
     var btn = document.createElement('button');
     btn.className = 'q-option' + (sel === s.id ? ' selected' : '');
     btn.textContent = s.label;
+    if (isNorwayPathLocked()) { btn.disabled = true; btn.style.opacity = '0.45'; btn.style.cursor = 'default'; }
     btn.onclick = (function(stageId) {
       return function() { selectNorwayStage(stageId); };
     })(s.id);
@@ -1276,6 +1277,7 @@ function renderNorwayPath() {
 
 
 function selectNorwayStage(id) {
+  if (isNorwayPathLocked()) { showToast('⛔ Norges vei er låst — gruppespillet er over'); return; }
   noPath={stage:id};
   localStorage.setItem('hra-nv',JSON.stringify(noPath));
   renderNorwayPath(); updateBadges(); updateOverview();
