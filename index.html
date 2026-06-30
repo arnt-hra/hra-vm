@@ -1206,6 +1206,11 @@ function isBigQLocked() {
   return Date.now() > (new Date(BIG_Q_DEADLINE).getTime() - 30 * 60 * 1000);
 }
 
+function isNorwayPathLocked() {
+  // Locked since Norway's group stage is over (Norge-Frankrike played)
+  return Date.now() > (new Date('2026-06-26T19:00:00Z').getTime() - 30*60*1000);
+}
+
 function selectBigTeam(qId, name) {
   if (isBigQLocked()) { showToast('⛔ VM & Toppcorer er låst (frist var 26. juni kl. 21:00)'); return; }
   bigAnswers[qId]=name;
