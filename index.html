@@ -1675,7 +1675,6 @@ function renderAdminPanel() {
   // Kår vinnere section
   var finished = JSON.parse(localStorage.getItem('hra-finished-contests') || '[]');
   var clist = [
-    {id:'kampresultater', label:'⚽ Kampresultater gruppespill'},
     {id:'sluttspill', label:'🏆 Totalvinner (etter sluttspill)'},
     {id:'norges-vei', label:'🇳🇴 Norges vei'},
     {id:'vm-vinner', label:'🏆 VM-vinner'},
@@ -2068,8 +2067,6 @@ function renderDeadlineBanner() {
 // ═══════════════════════════════════════════════════
 
 const CONTESTS = [
-  { id:'kampresultater', label:'Kampresultater gruppespill', icon:'⚽',
-    subtitle:'Nordisk gruppespill er over — her er poengoversikten!', scoreKey:'gruppe' },
   { id:'sluttspill', label:'Totalt — gruppespill + sluttspill', icon:'🏆',
     subtitle:'Turneringen er over — her er totalvinneren!', scoreKey:'total' },
   { id:'norges-vei', label:'Norges vei', icon:'🇳🇴',
