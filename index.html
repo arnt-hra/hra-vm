@@ -739,6 +739,13 @@ async function sbLoadAll() {
       if (finishedContests.length > 0) {
         localStorage.setItem('hra-finished-contests', JSON.stringify(finishedContests));
       }
+      // Load deactivated contests
+      var deactivatedContests = res
+        .filter(function(r) { return r.kamp_id.startsWith('contest-off-'); })
+        .map(function(r) { return r.kamp_id.replace('contest-off-', ''); });
+      if (deactivatedContests.length > 0) {
+        localStorage.setItem('hra-deactivated-contests', JSON.stringify(deactivatedContests));
+      }
     }
     if (currentUser) {
       const me = await sbReq('deltakere?navn=eq.' + encodeURIComponent(currentUser.name));
@@ -1687,10 +1694,18 @@ function renderAdminPanel() {
     var done = finished.includes(c.id);
     html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(0,0,0,.2);border-radius:8px;margin-bottom:6px">';
     html += '<span style="font-size:13px;font-weight:600;color:var(--white)">' + c.label + '</span>';
+    var deactivated = JSON.parse(localStorage.getItem('hra-deactivated-contests') || '[]');
+    var isDeactivated = deactivated.includes(c.id);
     if (done) {
       html += '<div style="display:flex;gap:8px;align-items:center">';
-      html += '<span style="font-size:12px;color:var(--green)">✅ Avgjort</span>';
-      html += '<button data-cid="' + c.id + '" onclick="adminUnmarkContest(this.dataset.cid)" style="background:none;border:1px solid rgba(255,255,255,.2);color:var(--grey);font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer">Angre</button>';
+      if (isDeactivated) {
+        html += '<span style="font-size:11px;color:var(--grey)">🔕 Deaktivert</span>';
+        html += '<button data-cid="' + c.id + '" onclick="adminReactivateContest(this.dataset.cid)" style="background:none;border:1px solid rgba(0,168,232,.3);color:var(--blue);font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer">Reaktiver</button>';
+      } else {
+        html += '<span style="font-size:12px;color:var(--green)">✅ Avgjort</span>';
+        html += '<button data-cid="' + c.id + '" onclick="adminDeactivateContest(this.dataset.cid)" style="background:rgba(217,64,64,.15);border:1px solid rgba(217,64,64,.3);color:var(--red);font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer">🔕 Deaktiver popup</button>';
+        html += '<button data-cid="' + c.id + '" onclick="adminUnmarkContest(this.dataset.cid)" style="background:none;border:1px solid rgba(255,255,255,.2);color:var(--grey);font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer">Angre</button>';
+      }
       html += '</div>';
     } else {
       html += '<button data-cid="' + c.id + '" onclick="adminMarkContest(this.dataset.cid)" style="background:var(--gold);color:#0a1f0e;border:none;font-weight:700;font-size:12px;padding:7px 16px;border-radius:7px;cursor:pointer">🏆 Kår vinner</button>';
@@ -2199,6 +2214,26 @@ async function adminMarkContest(id) {
   renderAdminPanel();
   setTimeout(checkWinnerPopup, 500);
 }
+async function adminDeactivateContest(id) {
+  var d = JSON.parse(localStorage.getItem('hra-deactivated-contests') || '[]');
+  if (!d.includes(id)) { d.push(id); localStorage.setItem('hra-deactivated-contests', JSON.stringify(d)); }
+  try {
+    await sbReq('resultater', {method:'POST',
+      body: JSON.stringify({kamp_id: 'contest-off-' + id, hjemme_mal: 1, borte_mal: 0})
+    });
+  } catch(e) { console.warn('Could not save deactivated:', e); }
+  showToast('🔕 Popup deaktivert for alle');
+  renderAdminPanel();
+}
+
+function adminReactivateContest(id) {
+  var d = JSON.parse(localStorage.getItem('hra-deactivated-contests') || '[]');
+  d = d.filter(function(c) { return c !== id; });
+  localStorage.setItem('hra-deactivated-contests', JSON.stringify(d));
+  showToast('🔔 Popup reaktivert for ' + id);
+  renderAdminPanel();
+}
+
 function adminUnmarkContest(id) {
   var f = JSON.parse(localStorage.getItem('hra-finished-contests') || '[]');
   f = f.filter(function(c) { return c !== id; });
@@ -2238,9 +2273,11 @@ function checkWinnerPopup() {
   // Which have we shown this session?
   var shown = JSON.parse(sessionStorage.getItem('hra-popup-shown') || '[]');
 
+  var deactivated = JSON.parse(localStorage.getItem('hra-deactivated-contests') || '[]');
   for (var i = 0; i < finished.length; i++) {
     var contestId = finished[i];
     if (shown.includes(contestId)) continue;
+    if (deactivated.includes(contestId)) continue;
 
     // If allParticipantData not ready yet, retry in 1s
     if (!allParticipantData || allParticipantData.length === 0) {
