@@ -2342,14 +2342,14 @@ else {
   document.querySelector('.hero').style.display='none';
   document.querySelector('main').style.display='none';
 }
-// Show new round banner until 5. juli kl 22:00 norsk
-(function() {
-  var expiry = new Date('2026-07-05T20:00:00Z').getTime();
+// Show new round banner until 7. juli kl 22:00 norsk
+document.addEventListener('DOMContentLoaded', function() {
+  var expiry = new Date('2026-07-07T20:00:00Z').getTime();
   if (Date.now() < expiry && !sessionStorage.getItem('hra-banner-closed')) {
     var b = document.getElementById('new-round-banner');
     if (b) b.style.display = 'block';
   }
-})();
+});
 initNotifBanner();
 renderDeadlineBanner();
 sbLoadAll();
