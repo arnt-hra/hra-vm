@@ -542,6 +542,7 @@ main{max-width:1180px;margin:0 auto;padding:24px 24px 100px}
 // VERSION RESET — bump number to force re-register
 // =============================================
 const APP_VERSION = '3';
+const R16_OPEN_NOTIF_KEY = 'hra-r16-open-shown';
 if (localStorage.getItem('hra-app-version') !== APP_VERSION) {
   ['hra-vm-predictions','hra-vm-norway','hra-vm-big','hra-vm-norway-path',
    'hra-players','hra-user','hra-results','hra-kr','hra-no','hra-big','hra-nv',
@@ -588,13 +589,16 @@ const ROUNDS = [
     ]
   },
   {
-    id: 'r16', label: 'Åttedelsfinale', icon: '🔥',
-    exactPts: 7, winnerPts: 3, locked: true,
+    id: 'r16', label: 'Åttedelsfinale', icon: '🔥', exactPts: 7, winnerPts: 3, locked: false,
     matches: [
-      { id:'r16a', group:'Åttedelsfinale', date:'TBD', home:{name:'?', flag:'🏳️'}, away:{name:'?', flag:'🏳️'}, tbd:true },
-      { id:'r16b', group:'Åttedelsfinale', date:'TBD', home:{name:'?', flag:'🏳️'}, away:{name:'?', flag:'🏳️'}, tbd:true },
-      { id:'r16c', group:'Åttedelsfinale', date:'TBD', home:{name:'?', flag:'🏳️'}, away:{name:'?', flag:'🏳️'}, tbd:true },
-      { id:'r16d', group:'Åttedelsfinale', date:'TBD', home:{name:'?', flag:'🏳️'}, away:{name:'?', flag:'🏳️'}, tbd:true },
+      { id:'r16a', group:'Åttedelsfinale', date:'4. jul',  home:{name:'Canada',         flag:'🇨🇦'}, away:{name:'Marokko',            flag:'🇲🇦'} },
+      { id:'r16b', group:'Åttedelsfinale', date:'4. jul',  home:{name:'Paraguay',       flag:'🇵🇾'}, away:{name:'Frankrike',          flag:'🇫🇷'} },
+      { id:'r16c', group:'Åttedelsfinale', date:'5. jul',  home:{name:'Brasil',         flag:'🇧🇷'}, away:{name:'Norge',              flag:'🇳🇴'} },
+      { id:'r16d', group:'Åttedelsfinale', date:'5. jul',  home:{name:'Japan',          flag:'🇯🇵'}, away:{name:'Ecuador',            flag:'🇪🇨'} },
+      { id:'r16e', group:'Åttedelsfinale', date:'6. jul',  home:{name:'Portugal',       flag:'🇵🇹'}, away:{name:'Spania',             flag:'🇪🇸'} },
+      { id:'r16f', group:'Åttedelsfinale', date:'6. jul',  home:{name:'England',        flag:'🇬🇧'}, away:{name:'Belgia',             flag:'🇧🇪'} },
+      { id:'r16g', group:'Åttedelsfinale', date:'7. jul',  home:{name:'Argentina',      flag:'🇦🇷'}, away:{name:'Australia',          flag:'🇦🇺'} },
+      { id:'r16h', group:'Åttedelsfinale', date:'7. jul',  home:{name:'Sveits',         flag:'🇨🇭'}, away:{name:'Colombia',           flag:'🇨🇴'} },
     ]
   },
   {
@@ -890,6 +894,14 @@ const MATCH_DATES = {
   'r32n': '2026-07-03T18:00:00Z',
   'r32o': '2026-07-03T22:00:00Z',
   'r32p': '2026-07-04T01:30:00Z',
+  'r16a': '2026-07-04T17:00:00Z',
+  'r16b': '2026-07-04T21:00:00Z',
+  'r16c': '2026-07-05T20:00:00Z',
+  'r16d': '2026-07-06T00:00:00Z',
+  'r16e': '2026-07-06T19:00:00Z',
+  'r16f': '2026-07-06T23:00:00Z',
+  'r16g': '2026-07-07T16:00:00Z',
+  'r16h': '2026-07-07T20:00:00Z',
 };
 function isMatchLocked(matchId) {
   var d = MATCH_DATES[matchId];
@@ -2260,6 +2272,20 @@ function testPopup() {
   showWinnerPopup(contest);
 }
 
+function showR16OpenPopup() {
+  if (!currentUser) return;
+  if (sessionStorage.getItem(R16_OPEN_NOTIF_KEY)) return;
+  sessionStorage.setItem(R16_OPEN_NOTIF_KEY, '1');
+
+  var overlay = document.getElementById('r16-popup-overlay');
+  if (overlay) overlay.style.display = 'flex';
+}
+
+function closeR16Popup() {
+  var overlay = document.getElementById('r16-popup-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
 function closeWinnerPopup() {
   var po = document.getElementById('winner-popup-overlay'); if(po) po.style.display='none';
 }
@@ -2316,6 +2342,7 @@ initNotifBanner();
 renderDeadlineBanner();
 sbLoadAll();
 checkInAppReminder();
+showR16OpenPopup();
 </script>
 
 <!-- WINNER POPUP -->
@@ -2328,6 +2355,23 @@ checkInAppReminder();
     <div id="popup-podium" style="display:flex;align-items:flex-end;justify-content:center;gap:8px;margin-bottom:20px"></div>
     <div id="popup-cta" style="font-size:12px;color:var(--grey);margin-bottom:12px;line-height:1.6"></div>
     <button onclick="closeWinnerPopup()" style="background:var(--gold);color:#0a1f0e;border:none;border-radius:10px;font-weight:800;font-size:14px;padding:12px 28px;cursor:pointer">&#x1f389; Supert, takk!</button>
+  </div>
+</div>
+
+
+<!-- R16 OPEN POPUP -->
+<div id="r16-popup-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:linear-gradient(135deg,#0a1f0e,#081508);border:2px solid var(--blue);border-radius:20px;padding:32px 28px;max-width:420px;width:100%;text-align:center;position:relative;box-shadow:0 0 40px rgba(0,168,232,.3)">
+    <button onclick="closeR16Popup()" style="position:absolute;top:14px;right:18px;background:none;border:none;color:var(--grey);font-size:24px;cursor:pointer;line-height:1">&times;</button>
+    <div style="font-size:36px;margin-bottom:12px">🔥</div>
+    <div style="font-size:11px;letter-spacing:3px;color:var(--blue);text-transform:uppercase;font-weight:700;margin-bottom:8px">Åttedelsfinale er åpnet!</div>
+    <div style="font-size:22px;font-weight:900;color:var(--white);margin-bottom:12px">Legg inn dine tips nå!</div>
+    <div style="font-size:13px;color:var(--grey);line-height:1.7;margin-bottom:20px">
+      8 kamper venter — inkludert <strong style="color:var(--white)">🇳🇴 Norge mot Brasil</strong> søndag 5. juli kl. 22:00.<br><br>
+      Husk: du tipper resultatet etter <strong style="color:var(--white)">90 minutter</strong>. Ekstraomganger teller ikke!
+    </div>
+    <button onclick="closeR16Popup(); document.getElementById('nav-konkurranser').click(); setTimeout(function(){ document.querySelector('[data-round=r16]') && document.querySelector('[data-round=r16]').click(); },300);" style="background:var(--blue);color:#fff;border:none;border-radius:10px;font-weight:800;font-size:14px;padding:12px 24px;cursor:pointer;margin-bottom:10px;width:100%">⚽ Tipp åttedelsfinale nå!</button>
+    <button onclick="closeR16Popup()" style="background:none;border:1px solid rgba(255,255,255,.2);color:var(--grey);font-size:13px;padding:8px 20px;border-radius:8px;cursor:pointer">Lukk</button>
   </div>
 </div>
 
