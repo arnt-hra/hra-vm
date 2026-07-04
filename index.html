@@ -598,10 +598,10 @@ const ROUNDS = [
       { id:'r16a', group:'Åttedelsfinale', date:'4. jul',  home:{name:'Canada',         flag:'🇨🇦'}, away:{name:'Marokko',            flag:'🇲🇦'} },
       { id:'r16b', group:'Åttedelsfinale', date:'4. jul',  home:{name:'Paraguay',       flag:'🇵🇾'}, away:{name:'Frankrike',          flag:'🇫🇷'} },
       { id:'r16c', group:'Åttedelsfinale', date:'5. jul',  home:{name:'Brasil',         flag:'🇧🇷'}, away:{name:'Norge',              flag:'🇳🇴'} },
-      { id:'r16d', group:'Åttedelsfinale', date:'6. jul',  home:{name:'Japan',          flag:'🇯🇵'}, away:{name:'Ecuador',            flag:'🇪🇨'} },
-      { id:'r16e', group:'Åttedelsfinale', date:'6. jul',  home:{name:'England',        flag:'🇬🇧'}, away:{name:'Mexico',             flag:'🇲🇽'} },
-      { id:'r16f', group:'Åttedelsfinale', date:'7. jul',  home:{name:'Belgia',         flag:'🇧🇪'}, away:{name:'USA',                flag:'🇺🇸'} },
-      { id:'r16g', group:'Åttedelsfinale', date:'7. jul',  home:{name:'?',              flag:'🏳️'},      away:{name:'?',                  flag:'🏳️'},      tbd:true },
+      { id:'r16d', group:'Åttedelsfinale', date:'5. jul',  home:{name:'Mexico',         flag:'🇲🇽'}, away:{name:'England',            flag:'🇬🇧'} },
+      { id:'r16e', group:'Åttedelsfinale', date:'6. jul',  home:{name:'Belgia',         flag:'🇧🇪'}, away:{name:'USA',                flag:'🇺🇸'} },
+      { id:'r16f', group:'Åttedelsfinale', date:'6. jul',  home:{name:'Portugal',       flag:'🇵🇹'}, away:{name:'Spania',             flag:'🇪🇸'} },
+      { id:'r16g', group:'Åttedelsfinale', date:'7. jul',  home:{name:'Sveits',         flag:'🇨🇭'}, away:{name:'?',                  flag:'🏳️'},      tbd:true },
       { id:'r16h', group:'Åttedelsfinale', date:'7. jul',  home:{name:'?',              flag:'🏳️'},      away:{name:'?',                  flag:'🏳️'},      tbd:true },
     ]
   },
@@ -898,14 +898,14 @@ const MATCH_DATES = {
   'r32n': '2026-07-03T18:00:00Z',
   'r32o': '2026-07-03T22:00:00Z',
   'r32p': '2026-07-04T01:30:00Z',
-  'r16a': '2026-07-04T17:00:00Z',
-  'r16b': '2026-07-04T21:00:00Z',
-  'r16c': '2026-07-05T20:00:00Z',
-  'r16d': '2026-07-06T00:00:00Z',
-  'r16e': '2026-07-06T01:00:00Z',  // England-Mexico (02:00 norsk tid)
-  'r16f': '2026-07-06T23:00:00Z',
-  'r16g': '2026-07-07T16:00:00Z',
-  'r16h': '2026-07-07T20:00:00Z',
+  'r16a': '2026-07-04T19:00:00Z',  // Canada-Marokko
+  'r16b': '2026-07-04T23:00:00Z',  // Paraguay-Frankrike
+  'r16c': '2026-07-05T20:00:00Z',  // Brasil-Norge (22:00 norsk)
+  'r16d': '2026-07-06T00:00:00Z',  // Mexico-England
+  'r16e': '2026-07-06T19:00:00Z',  // Belgia-USA
+  'r16f': '2026-07-06T23:00:00Z',  // Portugal-Spania
+  'r16g': '2026-07-07T16:00:00Z',  // Sveits-?
+  'r16h': '2026-07-07T20:00:00Z',  // ?-?
 };
 function isMatchLocked(matchId) {
   var d = MATCH_DATES[matchId];
