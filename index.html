@@ -292,7 +292,7 @@ main{max-width:1180px;margin:0 auto;padding:24px 24px 100px}
       <button onclick="switchTab('deltakere',this)">Deltakere</button>
       <button onclick="openAdminGate()" style="color:rgba(245,216,0,.5);font-size:11px" title="Adminpanel">⚙</button>
     </nav>
-    <div class="user-badge" id="user-badge" style="display:none">
+    <div class="user-badge" id="user-badge" style="display:none;align-items:center;gap:8px">
 
       ⚽ <span id="user-badge-name" style="color:var(--white);font-weight:600"></span>
     </div>
@@ -1563,6 +1563,25 @@ function gateRegister() {
   if('Notification' in window && Notification.permission==='default') {
     setTimeout(()=>{ document.getElementById('notif-banner').style.display='block'; }, 1200);
   }
+}
+
+function logOut() {
+  // Only clear user-specific localStorage keys — tips are safe in Supabase
+  localStorage.removeItem('hra-user');
+  localStorage.removeItem('hra-kr');
+  localStorage.removeItem('hra-big');
+  localStorage.removeItem('hra-nv');
+  localStorage.removeItem('hra-no');
+  localStorage.removeItem('hra-notif-last');
+  // Reset state
+  currentUser = null;
+  krPreds = {};
+  bigAnswers = {};
+  noPath = {};
+  // Show login gate
+  document.getElementById('gate-overlay').style.display = 'flex';
+  document.getElementById('gate-name').value = '';
+  showToast('👋 Logget ut. Logg inn igjen med ditt navn.');
 }
 
 function closeGate() {
