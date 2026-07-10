@@ -488,7 +488,20 @@ main{max-width:1180px;margin:0 auto;padding:24px 24px 100px}
       <label class="form-label" for="gate-name">Ditt navn</label>
       <input class="form-input" id="gate-name" type="text" placeholder="F.eks. Kari Nordmann" autocomplete="off">
     </div>
-    <div class="form-group" style="margin-top:10px">
+
+    <!-- Eksisterende bruker -->
+    <button class="btn-primary" onclick="gateLogin()" style="margin-top:14px;background:var(--blue)">
+      🔑 Logg inn med eksisterende bruker
+    </button>
+
+    <!-- Skillelinje -->
+    <div style="display:flex;align-items:center;gap:10px;margin:16px 0">
+      <div style="flex:1;height:1px;background:rgba(255,255,255,.1)"></div>
+      <span style="font-size:11px;color:var(--grey)">NY BRUKER</span>
+      <div style="flex:1;height:1px;background:rgba(255,255,255,.1)"></div>
+    </div>
+
+    <div class="form-group">
       <label class="form-label" for="gate-dept">Avdeling</label>
       <select class="form-select" id="gate-dept">
         <option value="">Velg avdeling…</option>
@@ -502,7 +515,9 @@ main{max-width:1180px;margin:0 auto;padding:24px 24px 100px}
         <option>Gjenvinningsstasjon Roa</option>
       </select>
     </div>
-    <button class="btn-primary" onclick="gateRegister()">Meld meg på og start tipping ⚽</button>
+    <button class="btn-primary" onclick="gateRegister()" style="margin-top:10px">
+      Meld meg på og start tipping ⚽
+    </button>
   </div>
 </div>
 
@@ -1551,6 +1566,49 @@ function removePlayer(i) {
 // ═══════════════════════════════════════════════════
 // REGISTRATION GATE
 // ═══════════════════════════════════════════════════
+async function gateLogin() {
+  const name = document.getElementById('gate-name').value.trim();
+  if (!name) { showToast('⚠️ Skriv inn navnet ditt'); return; }
+
+  showToast('🔍 Sjekker...');
+  try {
+    const rows = await sbReq('deltakere?navn=eq.' + encodeURIComponent(name) + '&select=id,navn,avdeling,tips_kr,tips_big,tips_nv&order=oppdatert.desc');
+    if (!rows || rows.length === 0) {
+      showToast('⚠️ Fant ikke ' + name + ' — sjekk stavemåten eller meld deg på som ny bruker');
+      return;
+    }
+
+    // Velg raden med flest tips
+    var bestRow = rows.reduce(function(best, row) {
+      var count = Object.keys(row.tips_kr || {}).length + Object.keys(row.tips_big || {}).length + Object.keys(row.tips_nv || {}).length;
+      var bestCount = Object.keys(best.tips_kr || {}).length + Object.keys(best.tips_big || {}).length + Object.keys(best.tips_nv || {}).length;
+      return count > bestCount ? row : best;
+    }, rows[0]);
+
+    // Sett bruker og last inn tips
+    currentUser = { name: bestRow.navn, dept: bestRow.avdeling };
+    localStorage.setItem('hra-user', JSON.stringify(currentUser));
+
+    krPreds    = bestRow.tips_kr  || {};
+    bigAnswers = bestRow.tips_big || {};
+    noPath     = bestRow.tips_nv  || {};
+    localStorage.setItem('hra-kr',  JSON.stringify(krPreds));
+    localStorage.setItem('hra-big', JSON.stringify(bigAnswers));
+    localStorage.setItem('hra-nv',  JSON.stringify(noPath));
+
+    closeGate();
+    showToast('⚽ Velkommen tilbake, ' + currentUser.name + '!');
+    if (typeof renderKampresultater === 'function') renderKampresultater();
+    if (typeof renderBigQ === 'function') renderBigQ();
+    if (typeof renderNorwayPath === 'function') renderNorwayPath();
+    if (typeof updateBadges === 'function') updateBadges();
+    if (typeof updateOverview === 'function') updateOverview();
+  } catch(e) {
+    showToast('⚠️ Noe gikk galt, prøv igjen');
+    console.warn('gateLogin failed:', e.message);
+  }
+}
+
 function gateRegister() {
   const name=document.getElementById('gate-name').value.trim();
   const dept=document.getElementById('gate-dept').value;
