@@ -877,9 +877,10 @@ async function sbSyncCurrentUser() {
       localStorage.setItem('hra-nv',  JSON.stringify(noPath));
       console.log('Tips lastet fra Supabase for:', currentUser.name);
       // Oppdater UI
-      if (typeof renderKampresultater === 'function') renderKampresultater();
+      if (typeof renderRounds === 'function') renderRounds();
       if (typeof renderBigQ === 'function') renderBigQ();
       if (typeof renderNorwayPath === 'function') renderNorwayPath();
+      if (typeof renderNorwayMatches === 'function') renderNorwayMatches();
       if (typeof updateBadges === 'function') updateBadges();
       if (typeof updateOverview === 'function') updateOverview();
     } else if (localHasTips && !sbHasTips) {
@@ -1598,9 +1599,10 @@ async function gateLogin() {
 
     closeGate();
     showToast('⚽ Velkommen tilbake, ' + currentUser.name + '!');
-    if (typeof renderKampresultater === 'function') renderKampresultater();
+    if (typeof renderRounds === 'function') renderRounds();
     if (typeof renderBigQ === 'function') renderBigQ();
     if (typeof renderNorwayPath === 'function') renderNorwayPath();
+    if (typeof renderNorwayMatches === 'function') renderNorwayMatches();
     if (typeof updateBadges === 'function') updateBadges();
     if (typeof updateOverview === 'function') updateOverview();
   } catch(e) {
