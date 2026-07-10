@@ -799,24 +799,19 @@ async function sbSaveTips() {
 
 async function sbRegister(name, dept) {
   try {
+    // Check if user already exists before inserting
+    const existing = await sbReq('deltakere?navn=eq.' + encodeURIComponent(name) + '&select=id');
+    if (existing && existing.length > 0) {
+      console.log('User already in Supabase, skipping insert:', name);
+      return;
+    }
     await sbReq('deltakere', {
       method: 'POST',
-      headers_extra: {'Prefer': 'resolution=ignore-duplicates'},
       body: JSON.stringify({navn: name, avdeling: dept})
     });
     console.log('Registered in Supabase:', name);
   } catch(e) {
     console.warn('sbRegister failed:', e.message);
-    // Retry once after 3 seconds
-    setTimeout(async function() {
-      try {
-        await sbReq('deltakere', {
-          method: 'POST',
-          body: JSON.stringify({navn: name, avdeling: dept})
-        });
-        console.log('sbRegister retry succeeded');
-      } catch(e2) { console.warn('sbRegister retry failed:', e2.message); }
-    }, 3000);
   }
 }
 
@@ -824,47 +819,61 @@ async function sbRegister(name, dept) {
 async function sbSyncCurrentUser() {
   if (!currentUser) return;
   try {
-    const ex = await sbReq('deltakere?navn=eq.' + encodeURIComponent(currentUser.name) + '&select=id,tips_kr,tips_big,tips_nv');
-    
-    // Check if local data has tips that Supabase is missing
-    const hasLocalKr  = Object.keys(krPreds).length > 0;
-    const hasLocalNo  = Object.keys(noPreds).length > 0;
-    const hasLocalBig = Object.keys(bigAnswers).length > 0;
-    const hasLocalNv  = Object.keys(noPath).length > 0;
-    const hasLocalTips = hasLocalKr || hasLocalNo || hasLocalBig || hasLocalNv;
+    const rows = await sbReq('deltakere?navn=eq.' + encodeURIComponent(currentUser.name) + '&select=id,tips_kr,tips_big,tips_nv&order=oppdatert.desc');
 
-    if (!ex || ex.length === 0) {
-      // User not in Supabase at all — insert with all local data
+    if (!rows || rows.length === 0) {
+      // Ikke i Supabase — opprett ny rad
       await sbReq('deltakere', {
         method: 'POST',
         body: JSON.stringify({
-          navn: currentUser.name,
-          avdeling: currentUser.dept,
-          tips_kr: krPreds,
-          tips_big: bigAnswers,
-          tips_nv: noPath
+          navn: currentUser.name, avdeling: currentUser.dept,
+          tips_kr: krPreds, tips_big: bigAnswers, tips_nv: noPath
         })
       });
-      console.log('Synced new user + tips to Supabase:', currentUser.name);
-    } else if (hasLocalTips) {
-      // User exists — check if Supabase tips are empty but local has data
-      const sbRow = ex[0];
-      const sbHasTips = (sbRow.tips_kr && Object.keys(sbRow.tips_kr).length > 0) ||
-                                                (sbRow.tips_big && Object.keys(sbRow.tips_big).length > 0) ||
-                        (sbRow.tips_nv && Object.keys(sbRow.tips_nv).length > 0);
-      if (!sbHasTips) {
-        // Supabase is empty but local has tips — sync automatically
-        await sbReq('deltakere?navn=eq.' + encodeURIComponent(currentUser.name), {
-          method: 'PATCH',
-          body: JSON.stringify({
-            tips_kr: krPreds,
-            tips_big: bigAnswers,
-            tips_nv: noPath,
-            oppdatert: new Date().toISOString()
-          })
-        });
-        console.log('Auto-synced local tips to Supabase for:', currentUser.name);
-      }
+      console.log('Ny bruker opprettet i Supabase:', currentUser.name);
+      return;
+    }
+
+    // Velg raden med flest tips (beste rad)
+    var bestRow = rows.reduce(function(best, row) {
+      var count = Object.keys(row.tips_kr || {}).length +
+                  Object.keys(row.tips_big || {}).length +
+                  Object.keys(row.tips_nv || {}).length;
+      var bestCount = Object.keys(best.tips_kr || {}).length +
+                      Object.keys(best.tips_big || {}).length +
+                      Object.keys(best.tips_nv || {}).length;
+      return count > bestCount ? row : best;
+    }, rows[0]);
+
+    var sbKr  = bestRow.tips_kr  || {};
+    var sbBig = bestRow.tips_big || {};
+    var sbNv  = bestRow.tips_nv  || {};
+    var sbHasTips = Object.keys(sbKr).length > 0 || Object.keys(sbBig).length > 0 || Object.keys(sbNv).length > 0;
+
+    var localHasTips = Object.keys(krPreds).length > 0 || Object.keys(bigAnswers).length > 0 || Object.keys(noPath).length > 0;
+
+    if (sbHasTips && !localHasTips) {
+      // Supabase har tips men localStorage er tomt (f.eks. etter utlogging) — last inn fra Supabase
+      krPreds    = sbKr;
+      bigAnswers = sbBig;
+      noPath     = sbNv;
+      localStorage.setItem('hra-kr',  JSON.stringify(krPreds));
+      localStorage.setItem('hra-big', JSON.stringify(bigAnswers));
+      localStorage.setItem('hra-nv',  JSON.stringify(noPath));
+      console.log('Tips lastet fra Supabase for:', currentUser.name);
+      // Oppdater UI
+      if (typeof renderKampresultater === 'function') renderKampresultater();
+      if (typeof renderBigQ === 'function') renderBigQ();
+      if (typeof renderNorwayPath === 'function') renderNorwayPath();
+      if (typeof updateBadges === 'function') updateBadges();
+      if (typeof updateOverview === 'function') updateOverview();
+    } else if (localHasTips && !sbHasTips) {
+      // Lokalt har tips men Supabase er tomt — sync til Supabase
+      await sbReq('deltakere?navn=eq.' + encodeURIComponent(currentUser.name), {
+        method: 'PATCH',
+        body: JSON.stringify({tips_kr: krPreds, tips_big: bigAnswers, tips_nv: noPath, oppdatert: new Date().toISOString()})
+      });
+      console.log('Lokale tips synket til Supabase for:', currentUser.name);
     }
   } catch(e) { console.warn('sbSyncCurrentUser failed:', e.message); }
 }
