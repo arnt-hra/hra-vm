@@ -1568,12 +1568,12 @@ function removePlayer(i) {
 // REGISTRATION GATE
 // ═══════════════════════════════════════════════════
 async function gateLogin() {
-  const name = document.getElementById('gate-name').value.trim();
+  var name = document.getElementById('gate-name').value.trim();
   if (!name) { showToast('⚠️ Skriv inn navnet ditt'); return; }
 
   showToast('🔍 Sjekker...');
   try {
-    const rows = await sbReq('deltakere?navn=eq.' + encodeURIComponent(name) + '&select=id,navn,avdeling,tips_kr,tips_big,tips_nv&order=oppdatert.desc');
+    var rows = await sbReq('deltakere?navn=eq.' + encodeURIComponent(name) + '&select=id,navn,avdeling,tips_kr,tips_big,tips_nv&order=oppdatert.desc');
     if (!rows || rows.length === 0) {
       showToast('⚠️ Fant ikke ' + name + ' — sjekk stavemåten eller meld deg på som ny bruker');
       return;
@@ -1581,9 +1581,9 @@ async function gateLogin() {
 
     // Velg raden med flest tips
     var bestRow = rows.reduce(function(best, row) {
-      var count = Object.keys(row.tips_kr || {}).length + Object.keys(row.tips_big || {}).length + Object.keys(row.tips_nv || {}).length;
-      var bestCount = Object.keys(best.tips_kr || {}).length + Object.keys(best.tips_big || {}).length + Object.keys(best.tips_nv || {}).length;
-      return count > bestCount ? row : best;
+      var c = Object.keys(row.tips_kr||{}).length + Object.keys(row.tips_big||{}).length + Object.keys(row.tips_nv||{}).length;
+      var b = Object.keys(best.tips_kr||{}).length + Object.keys(best.tips_big||{}).length + Object.keys(best.tips_nv||{}).length;
+      return c > b ? row : best;
     }, rows[0]);
 
     // Sett bruker og last inn tips
@@ -1599,12 +1599,15 @@ async function gateLogin() {
 
     closeGate();
     showToast('⚽ Velkommen tilbake, ' + currentUser.name + '!');
-    if (typeof renderRounds === 'function') renderRounds();
-    if (typeof renderBigQ === 'function') renderBigQ();
-    if (typeof renderNorwayPath === 'function') renderNorwayPath();
-    if (typeof renderNorwayMatches === 'function') renderNorwayMatches();
-    if (typeof updateBadges === 'function') updateBadges();
-    if (typeof updateOverview === 'function') updateOverview();
+
+    // Last all data og render UI
+    await sbLoadAll();
+    renderRounds();
+    renderBigQ();
+    renderNorwayPath();
+    renderNorwayMatches();
+    updateBadges();
+    updateOverview();
   } catch(e) {
     showToast('⚠️ Noe gikk galt, prøv igjen');
     console.warn('gateLogin failed:', e.message);
