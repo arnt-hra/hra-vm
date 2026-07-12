@@ -674,6 +674,8 @@ const NORWAY_STAGES = [
   {id:'final', label:'Finale (topp 2)'},
   {id:'winner',label:'🥇 VM-VINNER!'},
 ];
+// Oppdater dette når Norge er ute av turneringen
+const NORWAY_ACTUAL_STAGE = 'qf'; // Norge røk ut i kvartfinalen
 
 const MOCK_LB = [
   {name:'Ole Kristoffersen',  dept:'Renovasjon',                    kr:38, vm:10, no:12, nv:5},
@@ -1968,7 +1970,10 @@ async function loadAllTipsAndRefreshLb() {
 
       var tipNv = row.tips_nv || {};
       var nvPts = 0;
-      // Norges vei - check if stage matches actual result
+      // Norges vei - 5 poeng for eksakt riktig stage
+      if (NORWAY_ACTUAL_STAGE && tipNv.stage && tipNv.stage === NORWAY_ACTUAL_STAGE) {
+        nvPts = 5;
+      }
       // results['norges-vei'] would hold the actual stage
 
       // Count exact results (3p hits) for tiebreaker
