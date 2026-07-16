@@ -301,7 +301,7 @@ main{max-width:1180px;margin:0 auto;padding:24px 24px 100px}
 </header>
 
 <div id="new-round-banner" style="background:var(--gold);color:#0a1f0e;text-align:center;padding:10px 16px;font-size:13px;font-weight:700;position:relative;display:none">
-  🏅 Semifinalene er åpnet! Tipp Frankrike–Spania og England–Argentina nå!
+  🏆 Bronsefinale og VM-finale er åpnet! Tipp Frankrike–England og Spania–Argentina nå!
   <button onclick="document.getElementById('new-round-banner').style.display='none';sessionStorage.setItem('hra-banner-closed','1')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;cursor:pointer;color:#0a1f0e;line-height:1">&times;</button>
 </div>
 <div class="hero">
@@ -638,10 +638,17 @@ const ROUNDS = [
     ]
   },
   {
-    id: 'final', label: 'Finale', icon: '🏆',
-    exactPts: 15, winnerPts: 6, locked: true,
+    id: 'bronze', label: 'Bronsefinale', icon: '🥉',
+    exactPts: 10, winnerPts: 4, locked: false,
     matches: [
-      { id:'fin1', group:'VM-FINALEN', date:'19. jul', home:{name:'?', flag:'🏳️'}, away:{name:'?', flag:'🏳️'}, tbd:true },
+      { id:'bro1', group:'Bronsefinale', date:'18. jul', home:{name:'Frankrike', flag:'🇫🇷'}, away:{name:'England', flag:'🇬🇧'} },
+    ]
+  },
+  {
+    id: 'final', label: 'Finale', icon: '🏆',
+    exactPts: 15, winnerPts: 6, locked: false,
+    matches: [
+      { id:'fin1', group:'VM-FINALEN', date:'19. jul', home:{name:'Spania', flag:'🇪🇸'}, away:{name:'Argentina', flag:'🇦🇷'} },
     ]
   },
 ]
@@ -941,6 +948,8 @@ const MATCH_DATES = {
   'qf4':  '2026-07-12T01:00:00Z',  // Sveits-Argentina (03:00 norsk)
   'sf1':  '2026-07-14T19:00:00Z',  // Frankrike-Spania (21:00 norsk)
   'sf2':  '2026-07-15T19:00:00Z',  // England-Argentina (21:00 norsk)
+  'bro1': '2026-07-18T21:00:00Z',  // Bronsefinale Frankrike-England (23:00 norsk)
+  'fin1': '2026-07-19T19:00:00Z',  // Finale Spania-Argentina (21:00 norsk)
 };
 function isMatchLocked(matchId) {
   var d = MATCH_DATES[matchId];
@@ -1802,6 +1811,7 @@ function renderAdminPanel() {
   var clist = [
     {id:'sluttspill', label:'🏆 Totalvinner (etter sluttspill)'},
     {id:'norges-vei', label:'🇳🇴 Norges vei'},
+    {id:'bronze', label:'🥉 Bronsefinale'},
     {id:'vm-vinner', label:'🏆 VM-vinner'},
     {id:'toppcorer', label:'🎯 Toppcorer'},
   ];
@@ -2448,7 +2458,7 @@ else {
 }
 // Show new round banner until 7. juli kl 22:00 norsk
 document.addEventListener('DOMContentLoaded', function() {
-  var expiry = new Date('2026-07-15T19:00:00Z').getTime();
+  var expiry = new Date('2026-07-19T19:00:00Z').getTime();
   if (Date.now() < expiry && !sessionStorage.getItem('hra-banner-closed')) {
     var b = document.getElementById('new-round-banner');
     if (b) b.style.display = 'block';
